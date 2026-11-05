@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --gold-primary: #f59e0b;
+    --gold-glow: #fbbf24;
+    --gold-deep: #b45309;
+    --hud-bg: #030303;
+    --hud-surface: #0a0a0c;
+    --hud-border: rgba(245, 158, 11, 0.25);
+  }
+
+  body {
+    font-family: 'Rajdhani', 'Mukta', system-ui, sans-serif;
+    background-color: #030303;
+    color: #fef3c7;
+  }
+
+  h1, h2, h3, .hud-font {
+    font-family: 'Orbitron', monospace;
+  }
+
+  .marathi-font {
+    font-family: 'Mukta', sans-serif;
+  }
+}
+
+/* Futuristic Golden Glass & Glow effects */
+.gold-glow {
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.35), inset 0 0 15px rgba(245, 158, 11, 0.15);
+}
+
+.gold-glow-intense {
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.6), inset 0 0 25px rgba(245, 158, 11, 0.3);
+}
+
+.gold-text-glow {
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.7), 0 0 24px rgba(245, 158, 11, 0.4);
+}
+
+.hud-panel {
+  background: linear-gradient(135deg, rgba(16, 15, 12, 0.92) 0%, rgba(6, 6, 8, 0.96) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  backdrop-filter: blur(16px);
+  position: relative;
+}
+
+.hud-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid #fbbf24;
+  border-left: 2px solid #fbbf24;
+}
+
+.hud-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid #fbbf24;
+  border-right: 2px solid #fbbf24;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+::-webkit-scrollbar-thumb {
+  background: #78350f;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d97706;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+  100% { transform: scale(0.95); opacity: 0.5; }
+}
+
+@keyframes hud-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 22s linear infinite;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 16s linear infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 3s ease-in-out infinite;
+}
+
+.animate-hud-scan {
+  animation: hud-scan 3.5s ease-in-out infinite;
+}

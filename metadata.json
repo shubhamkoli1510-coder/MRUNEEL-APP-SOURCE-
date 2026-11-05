@@ -1,0 +1,9 @@
+{
+  "name": "MRUNEEL - Futuristic Android Personal AI Assistant",
+  "description": "JARVIS-inspired personal AI assistant for Android with voice-first interaction, 'Mruneel' wake word, Marathi, Hindi & English natural voice intelligence, offline architecture, camera object recognition, biometric security, and Android APK export.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
