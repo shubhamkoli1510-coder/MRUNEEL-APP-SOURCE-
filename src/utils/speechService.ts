@@ -1,5 +1,20 @@
 import { SupportedLanguage } from '../types/assistant';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { soundFx } from './audioSynthesizer';
+
+
+interface NativeTTSPlugin {
+  speak(options: {
+    text: string;
+    lang: string;
+    rate: number;
+    pitch: number;
+  }): Promise<void>;
+  stop(): Promise<void>;
+}
+
+const NativeTTS = registerPlugin<NativeTTSPlugin>('NativeTTS');
+
 
 // Type definitions for Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -259,67 +274,99 @@ class SpeechService {
     pitch: number = 1.0,
     onEnd?: () => void
   ) {
-    if (!this.synthesis) {
-      if (onEnd) onEnd();
+    const cleanText = text
+      .replace(/[*_#`~>]/g, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+      .trim();
+
+    if (!cleanText) {
+      onEnd?.();
+      return;
+    }
+
+    if (Capacitor.getPlatform() === 'android') {
+      NativeTTS.speak({
+        text: cleanText,
+        lang,
+        rate: speed,
+        pitch
+      }).then(() => {
+        onEnd?.();
+      }).catch(() => {
+        this.speakWithWebSpeech(cleanText, lang, speed, pitch, onEnd);
+      });
+      return;
+    }
+
+    this.speakWithWebSpeech(cleanText, lang, speed, pitch, onEnd);
+  }
+
+  private speakWithWebSpeech(
+    cleanText: string,
+    lang: SupportedLanguage,
+    speed: number,
+    pitch: number,
+    onEnd?: () => void
+  ) {
+    if (!this.synthesis || typeof SpeechSynthesisUtterance === 'undefined') {
+      onEnd?.();
       return;
     }
 
     try {
-      this.synthesis.cancel(); // Stop any pending speech
-
-      // Clean markdown tags, emojis, and symbols from speech string
-      const cleanText = text
-        .replace(/[*_#`~>]/g, '')
-        .replace(/\[.*?\]/g, '')
-        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-        .trim();
-
-      if (!cleanText) {
-        if (onEnd) onEnd();
-        return;
-      }
+      this.synthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = lang;
       utterance.rate = speed;
       utterance.pitch = pitch;
 
-      // Select most appropriate voice
-      const voices = this.availableVoices.length > 0 ? this.availableVoices : this.synthesis.getVoices();
+      const voices = this.availableVoices.length > 0
+        ? this.availableVoices
+        : this.synthesis.getVoices();
 
       let targetVoice: SpeechSynthesisVoice | undefined;
+
       if (lang === 'mr-IN') {
-        // Look for explicit Marathi voice
-        targetVoice = voices.find(v => v.lang.toLowerCase().includes('mr') || v.name.toLowerCase().includes('marathi'));
-        // Fallback to Hindi Indian voice which pronounces Devanagari naturally if Marathi voice isn't present
+        targetVoice = voices.find(v =>
+          v.lang.toLowerCase().includes('mr') ||
+          v.name.toLowerCase().includes('marathi')
+        );
+
         if (!targetVoice) {
-          targetVoice = voices.find(v => v.lang.toLowerCase().includes('hi-in') || v.name.toLowerCase().includes('hindi'));
+          targetVoice = voices.find(v =>
+            v.lang.toLowerCase().includes('hi-in') ||
+            v.name.toLowerCase().includes('hindi')
+          );
         }
       } else if (lang === 'hi-IN') {
-        targetVoice = voices.find(v => v.lang.toLowerCase().includes('hi') || v.name.toLowerCase().includes('hindi'));
-      } else {
-        // English JARVIS style deep voice
         targetVoice = voices.find(v =>
-          (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('george')) &&
+          v.lang.toLowerCase().includes('hi') ||
+          v.name.toLowerCase().includes('hindi')
+        );
+      } else {
+        targetVoice = voices.find(v =>
+          (v.name.toLowerCase().includes('male') ||
+            v.name.toLowerCase().includes('david') ||
+            v.name.toLowerCase().includes('george')) &&
           v.lang.toLowerCase().includes('en')
-        ) || voices.find(v => v.lang.toLowerCase().includes('en-us') || v.lang.toLowerCase().includes('en-in'));
+        ) || voices.find(v =>
+          v.lang.toLowerCase().includes('en-us') ||
+          v.lang.toLowerCase().includes('en-in')
+        );
       }
 
       if (targetVoice) {
         utterance.voice = targetVoice;
       }
 
-      utterance.onend = () => {
-        if (onEnd) onEnd();
-      };
-
-      utterance.onerror = () => {
-        if (onEnd) onEnd();
-      };
+      utterance.onend = () => onEnd?.();
+      utterance.onerror = () => onEnd?.();
 
       this.synthesis.speak(utterance);
     } catch {
-      if (onEnd) onEnd();
+      onEnd?.();
     }
   }
 
@@ -328,6 +375,10 @@ class SpeechService {
       try {
         this.synthesis.cancel();
       } catch {}
+    }
+
+    if (Capacitor.getPlatform() === 'android') {
+      NativeTTS.stop().catch(() => {});
     }
   }
 }
