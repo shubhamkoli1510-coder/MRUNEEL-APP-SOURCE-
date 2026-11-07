@@ -6,7 +6,7 @@ android {
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.mruneel.assistant"
+        applicationId "com.mruneel.assistant.bluejarvis"
         minSdk 24
         targetSdk 36
         versionCode 1
@@ -18,8 +18,18 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            keyAlias 'mruneel-upload'
+            storeFile file("${buildDir}/mruneel-upload.p12")
+            storePassword System.getenv('MRUNEEL_KEYSTORE_PASSWORD')
+            keyPassword System.getenv('MRUNEEL_KEYSTORE_PASSWORD')
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

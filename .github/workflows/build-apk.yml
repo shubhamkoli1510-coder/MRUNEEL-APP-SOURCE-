@@ -2,7 +2,7 @@ name: Build Android APK (MRUNEEL)
 
 on:
   push:
-    branches: [ main, master, feature/cloud-ai-fallback ]
+    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install ]
   workflow_dispatch:
 
 jobs:
@@ -39,11 +39,24 @@ jobs:
       - name: Sync Capacitor Android
         run: npx cap sync android
 
-      - name: Build Debug APK
+      - name: Prepare Android signing key
+        env:
+          MRUNEEL_KEYSTORE_BASE64: ${{ secrets.MRUNEEL_KEYSTORE_BASE64 }}
+        run: |
+          set -e
+          test -n "$MRUNEEL_KEYSTORE_BASE64" || { echo "ERROR: MRUNEEL_KEYSTORE_BASE64 secret is empty or missing"; exit 1; }
+          mkdir -p android/app/build
+          printf '%s' "$MRUNEEL_KEYSTORE_BASE64" | base64 --decode > android/app/build/mruneel-upload.p12
+          test -s android/app/build/mruneel-upload.p12 || { echo "ERROR: Keystore file is empty"; exit 1; }
+          chmod 600 android/app/build/mruneel-upload.p12
+
+      - name: Build Signed Release APK
         working-directory: android
+        env:
+          MRUNEEL_KEYSTORE_PASSWORD: ${{ secrets.MRUNEEL_KEYSTORE_PASSWORD }}
         run: |
           set -o pipefail
-          gradle assembleDebug --stacktrace --info 2>&1 | tee gradle-build.log
+          gradle assembleRelease --stacktrace --info 2>&1 | tee gradle-build.log
 
       - name: Upload Gradle Diagnostic Log
         if: always()
@@ -54,10 +67,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Upload MRUNEEL APK
+      - name: Upload MRUNEEL Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: MRUNEEL-Assistant-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: MRUNEEL-Blue-JARVIS-Signed-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14

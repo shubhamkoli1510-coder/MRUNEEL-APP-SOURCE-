@@ -9,3 +9,16 @@ coverage/
 
 .aistudio/
 *.zip
+
+# MRUNEEL Android signing - NEVER COMMIT
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore.base64
+password.txt
+private.pem
+certificate.pem
+
+# Local Android build output and signing material
+android/app/build/

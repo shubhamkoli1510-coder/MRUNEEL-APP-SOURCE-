@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.mruneel.assistant',
+  appId: 'com.mruneel.assistant.bluejarvis',
   appName: 'MRUNEEL',
   webDir: 'dist',
   server: {
