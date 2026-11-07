@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -14,27 +14,29 @@ const port = parseInt(process.env.PORT || '3000', 10);
 
 app.use(express.json({ limit: '25mb' }));
 
-// Initialize Google GenAI SDK server-side
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    },
-  },
-});
+// Initialize Gemini only when its server-side key exists.
+const ai = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: { 'User-Agent': 'aistudio-build' },
+      },
+    })
+  : null;
 
-// Health check endpoint
+// Health check endpoint (never expose API keys).
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'online',
     assistant: 'MRUNEEL Core v3.8',
     timestamp: new Date().toISOString(),
     apiKeyConfigured: !!process.env.GEMINI_API_KEY,
+    geminiConfigured: !!process.env.GEMINI_API_KEY,
+    openaiConfigured: !!process.env.OPENAI_API_KEY,
   });
 });
 
-// AI Chat Intelligence Endpoint
+// AI Chat: Gemini primary, OpenAI fallback.
 app.post('/api/gemini/chat', async (req: Request, res: Response) => {
   try {
     const {
@@ -42,7 +44,7 @@ app.post('/api/gemini/chat', async (req: Request, res: Response) => {
       history = [],
       language = 'mr-IN',
       personalMemories = '',
-      telemetry = {}
+      telemetry = {},
     } = req.body;
 
     if (!message || typeof message !== 'string') {
@@ -50,12 +52,14 @@ app.post('/api/gemini/chat', async (req: Request, res: Response) => {
       return;
     }
 
-    // Determine language instruction
-    let langInstruction = 'Respond primarily in Marathi (मराठी) with natural conversational Devanagari phrasing, respectful tone (use "सर" or "साहेब"), concise and authoritative.';
+    let langInstruction =
+      'Respond primarily in Marathi (मराठी) with natural conversational Devanagari phrasing, respectful tone (use "सर" or "साहेब"), concise and authoritative.';
     if (language === 'hi-IN') {
-      langInstruction = 'Respond primarily in Hindi (हिंदी) with natural conversational phrasing, respectful tone (use "सर" or "श्रीमान"), concise and authoritative.';
+      langInstruction =
+        'Respond primarily in Hindi (हिंदी) with natural conversational phrasing, respectful tone (use "सर" or "श्रीमान"), concise and authoritative.';
     } else if (language === 'en-US') {
-      langInstruction = 'Respond in crisp, futuristic English inspired by JARVIS, addressing the user as "Sir" or "Boss".';
+      langInstruction =
+        'Respond in crisp, futuristic English inspired by JARVIS, addressing the user as "Sir" or "Boss".';
     }
 
     const systemInstruction = `
@@ -64,68 +68,123 @@ You are MRUNEEL (मृणील), an elite, highly intelligent, loyal personal 
 Key Directives:
 1. Language & Persona: ${langInstruction}
 2. Tone: Calm, sophisticated, hyper-intelligent, technologically advanced, never robotic, always poised and helpful.
-3. Capabilities: You handle schedule coordination, alarms, notes, reminders, camera object recognition, Android system telemetry, and general intellect.
+3. Capabilities: You handle schedule coordination, alarms, notes, reminders, camera object recognition, Android system telemetry, and general intellect. Never claim an action was completed unless the app confirms it.
 4. Telemetry Context: Current device battery is ${telemetry.batteryLevel ? Math.round(telemetry.batteryLevel * 100) + '%' : 'optimal'}, network is ${telemetry.networkType || 'connected'}.
 5. User Personal Memory:
 ${personalMemories || 'User preferences loaded.'}
 6. Brevity: Keep conversational voice responses scannable and spoken-friendly (typically 1-3 sentences unless deep reasoning is requested).
 `.trim();
 
-    // Format recent conversation context cleanly for maximum performance
     let promptToSend = message;
     if (Array.isArray(history) && history.length > 1) {
       const recent = history
         .slice(-4)
-        .map(h => `${h.sender === 'user' ? 'User' : 'MRUNEEL'}: ${h.text}`)
+        .map((h: any) => `${h.sender === 'user' ? 'User' : 'MRUNEEL'}: ${h.text}`)
         .join('\n');
       if (recent.trim()) {
         promptToSend = `Recent conversation context:\n${recent}\n\nUser Question:\n${message}`;
       }
     }
 
-    // 25-second timeout race
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('AI response timed out')), 25000)
-    );
-
-    let replyText = '';
-    try {
-      const response = await Promise.race([
-        ai.models.generateContent({
-          model: 'gemini-3.1-flash-lite',
-          contents: promptToSend,
-          config: {
-            systemInstruction,
-          },
-        }),
-        timeoutPromise,
-      ]);
-      replyText = response.text || '';
-    } catch (e) {
-      console.warn('Gemini generateContent timeout or error, falling back:', (e as Error).message);
-      // Fallback response
-      if (language === 'mr-IN') {
-        replyText = `होय सर, मी तुमची आज्ञा स्वीकारली आहे. सर्व सिस्टीम कार्यक्षम आहेत. ("${message}")`;
-      } else if (language === 'hi-IN') {
-        replyText = `जी सर, आपकी आज्ञा स्वीकार कर ली गई है। सभी सिस्टम सामान्य हैं। ("${message}")`;
-      } else {
-        replyText = `Understood, Sir. All Android subsystems operating normally. ("${message}")`;
+    let geminiError = 'Gemini API key not configured';
+    if (ai) {
+      try {
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Gemini response timed out')), 25000)
+        );
+        const response = await Promise.race([
+          ai.models.generateContent({
+            model: 'gemini-3.1-flash-lite',
+            contents: promptToSend,
+            config: { systemInstruction },
+          }),
+          timeoutPromise,
+        ]);
+        const replyText = response.text?.trim();
+        if (replyText) {
+          res.json({
+            text: replyText,
+            language,
+            provider: 'gemini',
+            timestamp: Date.now(),
+          });
+          return;
+        }
+        geminiError = 'Gemini returned an empty response';
+      } catch (error) {
+        geminiError = (error as Error).message || 'Gemini request failed';
+        console.warn('Gemini failed; trying OpenAI:', geminiError);
       }
     }
 
-    if (!replyText) {
-      replyText = language === 'mr-IN'
-        ? 'होय सर, मी तुमच्या सेवेत हजर आहे.'
-        : 'Yes Sir, I am at your service.';
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const response = await fetch('https://api.openai.com/v1/responses', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+            instructions: systemInstruction,
+            input: promptToSend,
+          }),
+          signal: AbortSignal.timeout(25000),
+        });
+
+        const payload: any = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            payload?.error?.message || `OpenAI API error (${response.status})`
+          );
+        }
+
+        const extractedText = Array.isArray(payload.output)
+          ? payload.output
+              .flatMap((item: any) =>
+                Array.isArray(item.content) ? item.content : []
+              )
+              .filter((part: any) => part.type === 'output_text')
+              .map((part: any) => part.text || '')
+              .join('\n')
+              .trim()
+          : '';
+
+        const replyText =
+          (typeof payload.output_text === 'string'
+            ? payload.output_text
+            : extractedText).trim();
+
+        if (!replyText) {
+          throw new Error('OpenAI returned an empty response');
+        }
+
+        res.json({
+          text: replyText,
+          language,
+          provider: 'openai',
+          timestamp: Date.now(),
+        });
+        return;
+      } catch (error) {
+        const openaiError =
+          (error as Error).message || 'OpenAI request failed';
+        console.error('OpenAI fallback failed:', openaiError);
+        res.status(503).json({
+          error: 'All online AI providers are unavailable',
+          details: `Gemini: ${geminiError}; OpenAI: ${openaiError}`,
+        });
+        return;
+      }
     }
 
-    res.json({
-      text: replyText,
-      language,
-      timestamp: Date.now(),
+    res.status(503).json({
+      error: 'All online AI providers are unavailable',
+      details: `Gemini: ${geminiError}; OpenAI API key is not configured.`,
     });
   } catch (error) {
-    console.error('Gemini chat error:', error);
+    console.error('AI chat route error:', error);
     res.status(500).json({
       error: 'Failed to process assistant intelligence request',
       details: (error as Error).message,
@@ -133,14 +192,15 @@ ${personalMemories || 'User preferences loaded.'}
   }
 });
 
-// Camera Vision & Object Recognition Endpoint
+// Camera Vision & Object Recognition Endpoint (Gemini).
+// Never report a successful scan when image analysis has failed.
 app.post('/api/gemini/vision', async (req: Request, res: Response) => {
   try {
     const {
       imageBase64,
       mimeType = 'image/jpeg',
       prompt,
-      language = 'mr-IN'
+      language = 'mr-IN',
     } = req.body;
 
     if (!imageBase64) {
@@ -148,70 +208,70 @@ app.post('/api/gemini/vision', async (req: Request, res: Response) => {
       return;
     }
 
-    // Strip data URL header if present
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-
-    let visionInstruction = 'Identify the primary objects, text, documents, scene, or items visible in this Android camera snapshot. State clearly what is seen, key details, and actionable context.';
-    if (language === 'mr-IN') {
-      visionInstruction += ' Deliver the visual identification report in fluent Marathi (मराठी). Address the user as "सर".';
-    } else if (language === 'hi-IN') {
-      visionInstruction += ' Deliver the visual identification report in fluent Hindi (हिंदी). Address the user as "सर".';
-    } else {
-      visionInstruction += ' Deliver the visual identification report in English with high-tech JARVIS clarity.';
+    if (!ai) {
+      res.status(503).json({
+        error: 'Camera AI is unavailable',
+        details: 'Gemini API key is not configured on the server.',
+      });
+      return;
     }
 
-    const imagePart = {
-      inlineData: {
-        mimeType: mimeType || 'image/jpeg',
-        data: base64Data,
-      },
-    };
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
-    const textPart = {
-      text: prompt || 'Identify objects, text, scene, and details in this camera view.',
-    };
+    let visionInstruction =
+      'Identify the primary objects, text, documents, scene, or items visible in this Android camera snapshot. State clearly what is seen, key details, and actionable context.';
+    if (language === 'mr-IN') {
+      visionInstruction +=
+        ' Deliver the visual identification report in fluent Marathi (मराठी). Address the user as "सर".';
+    } else if (language === 'hi-IN') {
+      visionInstruction +=
+        ' Deliver the visual identification report in fluent Hindi (हिंदी). Address the user as "सर".';
+    } else {
+      visionInstruction +=
+        ' Deliver the visual identification report in English with high-tech JARVIS clarity.';
+    }
 
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Vision timeout')), 25000)
     );
 
-    let analysis = '';
-    try {
-      const response = await Promise.race([
-        ai.models.generateContent({
-          model: 'gemini-3.1-flash-lite',
-          contents: { parts: [imagePart, textPart] },
-          config: {
-            systemInstruction: visionInstruction,
-          },
-        }),
-        timeoutPromise,
-      ]);
-      analysis = response.text || '';
-    } catch (e) {
-      console.warn('Vision timeout or error, fallback:', (e as Error).message);
-      if (language === 'mr-IN') {
-        analysis = 'ऑप्टिकल स्कॅन पूर्ण: कॅमेरा फ्रेममध्ये वस्तू आणि मजकूर यशस्वीरित्या टिपला गेला आहे. सर्व सिस्टीम कार्यक्षम आहेत, सर.';
-      } else if (language === 'hi-IN') {
-        analysis = 'ऑप्टिकल स्कैन पूरा हुआ: कैमरा फ्रेम में वस्तुओं और टेक्स्ट की पहचान की गई है, सर।';
-      } else {
-        analysis = 'Optical scan complete: Objects and text identified in frame. Systems operational, Sir.';
-      }
-    }
+    const response = await Promise.race([
+      ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: mimeType || 'image/jpeg',
+                data: base64Data,
+              },
+            },
+            {
+              text: prompt || 'Identify objects, text, scene, and details in this camera view.',
+            },
+          ],
+        },
+        config: { systemInstruction: visionInstruction },
+      }),
+      timeoutPromise,
+    ]);
 
+    const analysis = response.text?.trim();
     if (!analysis) {
-      analysis = language === 'mr-IN'
-        ? 'कॅमेरा फ्रेम स्कॅन पूर्ण झाले, सर.'
-        : 'Optical scan complete, Sir.';
+      res.status(503).json({
+        error: 'Camera AI returned an empty analysis',
+      });
+      return;
     }
 
     res.json({
       analysis,
+      provider: 'gemini',
       timestamp: Date.now(),
     });
   } catch (error) {
     console.error('Gemini vision error:', error);
-    res.status(500).json({
+    res.status(503).json({
       error: 'Failed to process vision scan',
       details: (error as Error).message,
     });
