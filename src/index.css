@@ -5,15 +5,17 @@
     --gold-primary: #f59e0b;
     --gold-glow: #fbbf24;
     --gold-deep: #b45309;
-    --hud-bg: #030303;
-    --hud-surface: #0a0a0c;
-    --hud-border: rgba(245, 158, 11, 0.25);
+    --blue-primary: #0ea5e9;
+    --blue-glow: #67e8f9;
+    --hud-bg: #030916;
+    --hud-surface: #071426;
+    --hud-border: rgba(56, 189, 248, 0.28);
   }
 
   body {
     font-family: 'Rajdhani', 'Mukta', system-ui, sans-serif;
-    background-color: #030303;
-    color: #fef3c7;
+    background-color: #030916;
+    color: #e0f2fe;
   }
 
   h1, h2, h3, .hud-font {
@@ -39,8 +41,8 @@
 }
 
 .hud-panel {
-  background: linear-gradient(135deg, rgba(16, 15, 12, 0.92) 0%, rgba(6, 6, 8, 0.96) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.22);
+  background: linear-gradient(135deg, rgba(8, 28, 50, 0.94) 0%, rgba(4, 12, 25, 0.97) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.24);
   backdrop-filter: blur(16px);
   position: relative;
 }
@@ -52,8 +54,8 @@
   left: 0;
   width: 8px;
   height: 8px;
-  border-top: 2px solid #fbbf24;
-  border-left: 2px solid #fbbf24;
+  border-top: 2px solid #67e8f9;
+  border-left: 2px solid #67e8f9;
 }
 
 .hud-panel::after {
@@ -73,14 +75,14 @@
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #050505;
+  background: #050d1b;
 }
 ::-webkit-scrollbar-thumb {
-  background: #78350f;
+  background: #155e75;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d97706;
+  background: #0ea5e9;
 }
 
 @keyframes spin-slow {

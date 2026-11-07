@@ -400,10 +400,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030303] text-amber-100 flex flex-col justify-between max-w-lg mx-auto border-x border-amber-950/40 relative shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden">
+    <div className="min-h-screen bg-[#030916] text-sky-100 flex flex-col justify-between max-w-lg mx-auto border-x border-amber-950/40 relative shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden">
       {/* Background Holographic Hex Grid & Lighting */}
-      <div className="absolute inset-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:28px_28px] opacity-10 pointer-events-none"></div>
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(#0ea5e9_1px,transparent_1px)] [background-size:28px_28px] opacity-10 pointer-events-none"></div>
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-sky-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
       {/* Lockscreen Shield Overlay */}
       {isLocked && (

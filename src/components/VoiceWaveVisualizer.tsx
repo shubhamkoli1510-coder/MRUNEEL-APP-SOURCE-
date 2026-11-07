@@ -23,14 +23,17 @@ export const VoiceWaveVisualizer: React.FC<VoiceWaveVisualizerProps> = ({ state 
       ctx.clearRect(0, 0, width, height);
 
       const isActive = state === 'listening' || state === 'speaking' || state === 'thinking';
-      const amplitude = isActive ? (state === 'speaking' ? 22 : 16) : 4;
-      const frequency = isActive ? 0.04 : 0.02;
+      const amplitude = isActive ? (state === 'speaking' ? 22 : state === 'listening' ? 18 : 12) : 3;
+      const frequency = isActive ? 0.045 : 0.022;
+      const primary = state === 'thinking' ? 'rgba(251,191,36,0.9)' : 'rgba(56,189,248,0.95)';
+      const secondary = state === 'listening' ? 'rgba(34,211,238,0.75)' : 'rgba(14,165,233,0.58)';
+      const accent = 'rgba(251,191,36,0.55)';
 
       // Draw 3 layered golden sine wave lines
       const layers = [
-        { color: 'rgba(251, 191, 36, 0.85)', lineWidth: 2, speed: 0.08, phaseShift: 0 },
-        { color: 'rgba(245, 158, 11, 0.5)', lineWidth: 1.5, speed: -0.05, phaseShift: Math.PI / 4 },
-        { color: 'rgba(217, 119, 6, 0.3)', lineWidth: 1, speed: 0.1, phaseShift: Math.PI / 2 }
+        { color: primary, lineWidth: 2, speed: 0.08, phaseShift: 0 },
+        { color: secondary, lineWidth: 1.5, speed: -0.05, phaseShift: Math.PI / 4 },
+        { color: accent, lineWidth: 1, speed: 0.1, phaseShift: Math.PI / 2 }
       ];
 
       layers.forEach(layer => {
@@ -56,7 +59,7 @@ export const VoiceWaveVisualizer: React.FC<VoiceWaveVisualizerProps> = ({ state 
         for (let i = 0; i < barCount; i++) {
           const x = i * spacing + spacing / 2;
           const barHeight = Math.abs(Math.sin(phase * 0.1 + i * 0.3)) * (state === 'speaking' ? 20 : 12);
-          ctx.fillStyle = 'rgba(251, 191, 36, 0.6)';
+          ctx.fillStyle = i % 5 === 0 ? accent : secondary;
           ctx.fillRect(x - 1, (height - barHeight) / 2, 2, barHeight);
         }
       }

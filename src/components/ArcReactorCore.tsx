@@ -46,30 +46,30 @@ export const ArcReactorCore: React.FC<ArcReactorCoreProps> = ({
   const getRingColor = () => {
     switch (state) {
       case 'listening':
-        return 'border-amber-400 shadow-[0_0_50px_rgba(251,191,36,0.8)] scale-105';
+        return 'border-cyan-300 shadow-[0_0_52px_rgba(34,211,238,0.8)] scale-105';
       case 'thinking':
-        return 'border-yellow-300 shadow-[0_0_60px_rgba(253,224,71,0.9)] animate-pulse';
+        return 'border-amber-300 shadow-[0_0_58px_rgba(251,191,36,0.7)] animate-pulse';
       case 'speaking':
-        return 'border-amber-500 shadow-[0_0_50px_rgba(245,158,11,0.85)]';
+        return 'border-sky-400 shadow-[0_0_54px_rgba(56,189,248,0.85)]';
       case 'scanning':
         return 'border-emerald-400 shadow-[0_0_45px_rgba(52,211,153,0.7)]';
       case 'error':
         return 'border-rose-500 shadow-[0_0_45px_rgba(244,63,94,0.8)]';
       default:
-        return 'border-amber-600/60 shadow-[0_0_30px_rgba(217,119,6,0.4)]';
+        return 'border-sky-500/70 shadow-[0_0_34px_rgba(14,165,233,0.5)]';
     }
   };
 
   const getCoreGlow = () => {
     switch (state) {
       case 'listening':
-        return 'bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-200 shadow-[0_0_40px_#f59e0b] animate-ping';
+        return 'bg-gradient-to-tr from-blue-700 via-cyan-300 to-white shadow-[0_0_42px_#22d3ee] animate-pulse';
       case 'thinking':
-        return 'bg-gradient-to-tr from-yellow-500 via-amber-300 to-yellow-100 shadow-[0_0_50px_#fbbf24] animate-spin-slow';
+        return 'bg-gradient-to-tr from-amber-600 via-yellow-300 to-white shadow-[0_0_48px_#fbbf24] animate-spin-slow';
       case 'error':
         return 'bg-gradient-to-tr from-red-600 via-rose-500 to-amber-400 shadow-[0_0_40px_#ef4444]';
       default:
-        return 'bg-gradient-to-tr from-amber-700 via-yellow-500 to-amber-300 shadow-[0_0_25px_#d97706]';
+        return 'bg-gradient-to-tr from-blue-950 via-sky-500 to-cyan-100 shadow-[0_0_30px_#0ea5e9]';
     }
   };
 
@@ -85,7 +85,7 @@ export const ArcReactorCore: React.FC<ArcReactorCoreProps> = ({
       >
         {/* Layer 1: Outermost Rotating Telemetry Ring */}
         <div
-          className={`absolute inset-0 rounded-full border border-dashed border-amber-500/30 transition-all duration-700 ${
+          className={`absolute inset-0 rounded-full border border-dashed border-sky-400/40 transition-all duration-700 ${
             state === 'thinking' ? 'animate-spin-reverse' : 'animate-spin-slow'
           }`}
           style={{ borderSpacing: '8px' }}
@@ -99,7 +99,7 @@ export const ArcReactorCore: React.FC<ArcReactorCoreProps> = ({
 
         {/* Layer 2: Middle Segmented Arc Ring */}
         <div
-          className={`absolute inset-4 rounded-full border-2 border-t-amber-400 border-r-amber-500/40 border-b-amber-600/20 border-l-amber-500/40 transition-all duration-500 ${
+          className={`absolute inset-4 rounded-full border-2 border-t-cyan-300 border-r-sky-500/40 border-b-amber-400/50 border-l-blue-400/50 transition-all duration-500 ${
             state === 'thinking' ? 'animate-spin' : 'animate-spin-reverse'
           }`}
         ></div>
@@ -116,7 +116,7 @@ export const ArcReactorCore: React.FC<ArcReactorCoreProps> = ({
             cy="50"
             r="44"
             fill="none"
-            stroke="rgba(245, 158, 11, 0.25)"
+            stroke="rgba(56, 189, 248, 0.34)"
             strokeWidth="1.5"
             strokeDasharray="4 6"
           />
@@ -125,7 +125,7 @@ export const ArcReactorCore: React.FC<ArcReactorCoreProps> = ({
             cy="50"
             r="36"
             fill="none"
-            stroke="rgba(251, 191, 36, 0.4)"
+            stroke="rgba(34, 211, 238, 0.5)"
             strokeWidth="2"
             strokeDasharray="20 15 30 10"
           />
@@ -134,14 +134,14 @@ export const ArcReactorCore: React.FC<ArcReactorCoreProps> = ({
             cy="50"
             r="28"
             fill="none"
-            stroke="rgba(217, 119, 6, 0.35)"
+            stroke="rgba(251, 191, 36, 0.38)"
             strokeWidth="1"
           />
         </svg>
 
         {/* Layer 4: Floating Reactive Core Sphere */}
         <div
-          className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 ${getRingColor()} flex items-center justify-center bg-black/80 backdrop-blur-md transition-all duration-500 z-10 group-hover:scale-105`}
+          className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 ${getRingColor()} flex items-center justify-center bg-[#061426]/90 backdrop-blur-md transition-all duration-500 z-10 group-hover:scale-105`}
         >
           {/* Central Golden Energy Nucleus */}
           <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full ${getCoreGlow()} flex items-center justify-center transition-all duration-500`}>
@@ -163,12 +163,12 @@ export const ArcReactorCore: React.FC<ArcReactorCoreProps> = ({
 
       {/* Dynamic Status Display & Telemetry Indicator */}
       <div className="mt-2 text-center max-w-sm px-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/40 border border-amber-500/30 text-amber-300 text-xs tracking-wider uppercase font-semibold">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/50 border border-sky-400/35 text-sky-200 text-xs tracking-wider uppercase font-semibold">
           <span className={`w-2 h-2 rounded-full ${state === 'listening' ? 'bg-amber-400 animate-ping' : state === 'error' ? 'bg-rose-500' : 'bg-emerald-400'}`}></span>
           <span className="truncate">{getStateLabel()}</span>
         </div>
 
-        <p className="text-[11px] text-amber-400/60 mt-1 font-mono tracking-widest uppercase">
+        <p className="text-[11px] text-sky-300/60 mt-1 font-mono tracking-widest uppercase">
           MRUNEEL CORE v3.8 • JARVIS PROTOCOL
         </p>
       </div>
