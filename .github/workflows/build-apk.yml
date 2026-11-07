@@ -2,7 +2,7 @@ name: Build Android APK (MRUNEEL)
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, feature/cloud-ai-fallback ]
   workflow_dispatch:
 
 jobs:
