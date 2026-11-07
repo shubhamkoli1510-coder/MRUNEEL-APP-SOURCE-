@@ -42,13 +42,17 @@ jobs:
       - name: Prepare Android signing key
         env:
           MRUNEEL_KEYSTORE_BASE64: ${{ secrets.MRUNEEL_KEYSTORE_BASE64 }}
+          MRUNEEL_KEYSTORE_PASSWORD: ${{ secrets.MRUNEEL_KEYSTORE_PASSWORD }}
         run: |
-          set -e
+          set -euo pipefail
           test -n "$MRUNEEL_KEYSTORE_BASE64" || { echo "ERROR: MRUNEEL_KEYSTORE_BASE64 secret is empty or missing"; exit 1; }
+          test -n "$MRUNEEL_KEYSTORE_PASSWORD" || { echo "ERROR: MRUNEEL_KEYSTORE_PASSWORD secret is empty or missing"; exit 1; }
           mkdir -p android/app/build
-          printf '%s' "$MRUNEEL_KEYSTORE_BASE64" | base64 --decode > android/app/build/mruneel-upload.p12
+          printf '%s' "$MRUNEEL_KEYSTORE_BASE64" | tr -cd 'A-Za-z0-9+/=' | base64 --decode > android/app/build/mruneel-upload.p12
           test -s android/app/build/mruneel-upload.p12 || { echo "ERROR: Keystore file is empty"; exit 1; }
           chmod 600 android/app/build/mruneel-upload.p12
+          openssl pkcs12 -in android/app/build/mruneel-upload.p12 -passin env:MRUNEEL_KEYSTORE_PASSWORD -info -noout >/dev/null 2>&1 || { echo "ERROR: Decoded keystore is invalid or password does not match. Recheck GitHub signing secrets."; exit 1; }
+          echo "SUCCESS: Android signing keystore decoded and validated."
 
       - name: Build Signed Release APK
         working-directory: android
