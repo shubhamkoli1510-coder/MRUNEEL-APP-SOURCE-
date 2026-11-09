@@ -35,6 +35,8 @@ import { AndroidPermissionsHub } from './components/AndroidPermissionsHub';
 import { AndroidApkExportModal } from './components/AndroidApkExportModal';
 import { SettingsModal } from './components/SettingsModal';
 
+const API_BASE_URL = 'https://mruneel-core-api.onrender.com';
+
 export default function App() {
   // Settings & Memory
   const [settings, setSettings] = useState<AssistantSettings>(() => MemoryManager.getSettings());
@@ -211,7 +213,7 @@ export default function App() {
       // Online Gemini Endpoint
       try {
         const memories = MemoryManager.getMemoriesForPrompt();
-        const res = await fetch('/api/gemini/chat', {
+        const res = await fetch(`${API_BASE_URL}/api/gemini/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           signal: AbortSignal.timeout(28000),

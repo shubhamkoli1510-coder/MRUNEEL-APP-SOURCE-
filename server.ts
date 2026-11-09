@@ -12,6 +12,30 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = parseInt(process.env.PORT || '3000', 10);
 
+// Allow the MRUNEEL Android Capacitor app to call this backend.
+const allowedOrigins = new Set([
+  'https://localhost',
+  'http://localhost',
+  'capacitor://localhost',
+  'http://localhost:5173',
+  'http://localhost:4173',
+]);
+
+app.use((req: Request, res: Response, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 app.use(express.json({ limit: '25mb' }));
 
 // Initialize Gemini only when its server-side key exists.

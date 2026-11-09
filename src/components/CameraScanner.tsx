@@ -4,6 +4,8 @@ import { SupportedLanguage } from '../types/assistant';
 import { soundFx } from '../utils/audioSynthesizer';
 import { deviceBridge } from '../utils/deviceBridge';
 
+const API_BASE_URL = 'https://mruneel-core-api.onrender.com';
+
 interface CameraScannerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -108,7 +110,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
       }
 
       // Call Gemini Vision API on backend
-      const res = await fetch('/api/gemini/vision', {
+      const res = await fetch(`${API_BASE_URL}/api/gemini/vision`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -149,7 +151,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
       soundFx.playScanBlip();
 
       try {
-        const res = await fetch('/api/gemini/vision', {
+        const res = await fetch(`${API_BASE_URL}/api/gemini/vision`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
