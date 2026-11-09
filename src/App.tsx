@@ -59,11 +59,12 @@ export default function App() {
 
   // Hardware Telemetry
   const [telemetry, setTelemetry] = useState<DeviceTelemetry>({
-    batteryLevel: 0.88,
-    isCharging: false,
-    networkType: '4G/WIFI',
-    isOnline: true,
-    downlinkSpeedMbps: 25,
+    // Never invent device readings before the APIs report them.
+    batteryLevel: null,
+    isCharging: null,
+    networkType: 'UNAVAILABLE',
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : false,
+    downlinkSpeedMbps: null,
     orientationAlpha: 0,
     orientationBeta: 0,
     orientationGamma: 0,
