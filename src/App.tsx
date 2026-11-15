@@ -84,7 +84,7 @@ export default function App() {
       sender: 'mruneel',
       text:
         settings.defaultLanguage === 'mr-IN'
-          ? `नमस्कार! मी मृणील (MRUNEEL). सर्व सिस्टीम सज्ज आहेत. "मृणील" म्हणा किंवा कोरवर टॅप करा, मी तुमच्या मदतीसाठी सदैव हजर आहे.`
+          ? `हा बछा, मी इथंच आहे, बोल! "मृणील" म्हणा किंवा कोरवर टॅप करा.`
           : `Online. I am MRUNEEL. All Android core subsystems calibrated and standing by. Say "Mruneel" or tap the core.`,
       language: settings.defaultLanguage,
       timestamp: Date.now(),
@@ -223,6 +223,11 @@ export default function App() {
             message: queryText,
             history: messages,
             language,
+            userProfile: {
+              name: settings.userName || '',
+              honorific: settings.honorific || '',
+              conversationStyle: language === 'mr-IN' ? 'natural_kolhapuri_marathi' : 'natural_conversational',
+            },
             personalMemories: memories,
             telemetry: {
               batteryLevel: telemetry.batteryLevel,
