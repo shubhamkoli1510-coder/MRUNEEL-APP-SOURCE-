@@ -106,9 +106,10 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Continuous Wake Word Listener
+  // Continuous Wake Word Listener: active only while MRUNEEL is idle.
+  // Automatically rearms after command capture and assistant speech completion.
   useEffect(() => {
-    if (isLocked || !settings.wakeWordEnabled || showCamera) {
+    if (isLocked || !settings.wakeWordEnabled || showCamera || assistantState !== 'idle') {
       speechService.stopWakeWordListener();
       return;
     }
@@ -127,7 +128,7 @@ export default function App() {
     return () => {
       speechService.stopWakeWordListener();
     };
-  }, [isLocked, settings.wakeWordEnabled, language, showCamera]);
+  }, [isLocked, settings.wakeWordEnabled, language, showCamera, assistantState]);
 
   // Execute Voice Command or Query
   const handleUserQuery = async (queryText: string, visionSnapshot?: string) => {
