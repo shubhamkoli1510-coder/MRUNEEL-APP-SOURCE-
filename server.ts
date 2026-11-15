@@ -73,7 +73,11 @@ app.post('/api/gemini/chat', async (req: Request, res: Response) => {
     } = req.body;
 
     if (!message || typeof message !== 'string') {
-      res.status(400).json({ error: 'Message is required' }    const userName =
+      res.status(400).json({ error: 'Message is required' });
+      return;
+    }
+
+    const userName =
       typeof userProfile.name === 'string' ? userProfile.name.trim().slice(0, 60) : '';
     const honorific =
       typeof userProfile.honorific === 'string' ? userProfile.honorific.trim().slice(0, 30) : '';
@@ -136,9 +140,6 @@ ${personalMemories || 'No personal memories are currently available.'}
 SELF-IMPROVEMENT FEEDBACK
 19. Treat user corrections and feedback as guidance for the current response. Do not claim the preference has been permanently saved unless a save operation is confirmed.
 20. When the user points out a mistake, acknowledge it briefly, correct it, and avoid defending the mistake.
-`.trim();
-
-s requested.
 `.trim();
 
     let promptToSend = message;
