@@ -1,13 +1,21 @@
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
 /**
- * Security Engine for MRUNEEL Assistant
- * Handles PIN hashing, biometric credential verification, and brute-force lockout protection.
+ * Security Engine for MRUNEEL Assistant.
+ * PIN verification and lockout are local; biometric verification is delegated
+ * to Android's native BiometricPrompt and fails closed when unavailable.
  */
 
 const PIN_STORAGE_KEY = 'mruneel_pin_hash';
 const LOCKOUT_KEY = 'mruneel_lockout_until';
 const DEFAULT_PIN = '1234';
 
-// Simple fast SHA-256 equivalent hash using Web Crypto API or fallback
+interface NativeBiometricPlugin {
+  authenticate(): Promise<{ success: boolean; message: string }>;
+}
+
+const NativeBiometric = registerPlugin<NativeBiometricPlugin>('NativeBiometric');
+
 export async function hashPin(pin: string): Promise<string> {
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const encoder = new TextEncoder();
@@ -16,7 +24,8 @@ export async function hashPin(pin: string): Promise<string> {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
-  // Fallback simple deterministic hash
+
+  // Compatibility fallback only. Production Android builds should provide Web Crypto.
   let hash = 0;
   const salted = pin + '_mruneel_salt';
   for (let i = 0; i < salted.length; i++) {
@@ -32,7 +41,7 @@ export async function verifyPin(enteredPin: string): Promise<boolean> {
   const enteredHash = await hashPin(enteredPin);
 
   if (!currentHash) {
-    // Check against default PIN 1234
+    // Temporary compatibility for existing installations. Replace during PIN setup migration.
     const defaultHash = await hashPin(DEFAULT_PIN);
     return enteredHash === defaultHash;
   }
@@ -41,6 +50,9 @@ export async function verifyPin(enteredPin: string): Promise<boolean> {
 }
 
 export async function saveNewPin(newPin: string): Promise<void> {
+  if (!/^\\d{4}$/.test(newPin)) {
+    throw new Error('PIN must contain exactly four digits.');
+  }
   const hash = await hashPin(newPin);
   localStorage.setItem(PIN_STORAGE_KEY, hash);
 }
@@ -65,33 +77,23 @@ export function triggerLockout(seconds: number = 30): void {
 }
 
 /**
- * Trigger Biometric Authentication via WebAuthn if supported on Android / Mobile browser
+ * Authenticate using Android BiometricPrompt.
+ * No browser/demo fallback may grant access without a real verified challenge.
  */
 export async function authenticateBiometric(): Promise<{ success: boolean; message: string }> {
-  if (typeof window === 'undefined') {
-    return { success: false, message: 'Window not defined' };
+  if (Capacitor.getPlatform() !== 'android') {
+    return {
+      success: false,
+      message: 'खरे बायोमेट्रिक प्रमाणीकरण फक्त Android APK मध्ये उपलब्ध आहे.'
+    };
   }
 
-  // Check WebAuthn availability
-  if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-    try {
-      const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-      if (isAvailable) {
-        // Biometric sensor is available on device (e.g. Android Fingerprint / Face Unlock)
-        // We simulate a verified challenge or request assertion
-        return {
-          success: true,
-          message: 'बायोमेट्रिक प्रमाणीकरण यशस्वी (Biometric Verified)'
-        };
-      }
-    } catch {
-      // Fallback
-    }
+  try {
+    return await NativeBiometric.authenticate();
+  } catch {
+    return {
+      success: false,
+      message: 'बायोमेट्रिक सेवा सुरू झाली नाही. PIN वापरून अनलॉक करा.'
+    };
   }
-
-  // Fallback simulator for demo when WebAuthn hardware is bypassed
-  return {
-    success: true,
-    message: 'हार्डवेअर बायोमेट्रिक यशस्वीरित्या प्रमाणित झाले (Biometric Authenticated)'
-  };
 }
