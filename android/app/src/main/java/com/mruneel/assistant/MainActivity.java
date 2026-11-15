@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(NativeTTSPlugin.class);
+        registerPlugin(NativeBiometricPlugin.class);
         super.onCreate(savedInstanceState);
 
         // Keep screen on while assistant active
@@ -17,6 +18,5 @@ public class MainActivity extends BridgeActivity {
 
         // Wake-word listening is controlled by the app's foreground listener.
         // Do not auto-start a second native microphone listener here.
-
     }
 }
