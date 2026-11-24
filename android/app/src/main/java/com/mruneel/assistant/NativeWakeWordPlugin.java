@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.speech.SpeechRecognizer;
 
 import androidx.core.content.ContextCompat;
 
@@ -13,6 +14,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 import com.getcapacitor.PermissionState;
 
 @CapacitorPlugin(
@@ -69,6 +71,10 @@ public class NativeWakeWordPlugin extends Plugin {
 
     private void startService(PluginCall call) {
         try {
+            if (!SpeechRecognizer.isRecognitionAvailable(getContext())) {
+                call.reject("No Android speech recognition provider is available on this device.");
+                return;
+            }
             Intent serviceIntent = new Intent(getContext(), com.mruneel.assistant.service.WakeWordForegroundService.class);
             ContextCompat.startForegroundService(getContext(), serviceIntent);
             call.resolve();
