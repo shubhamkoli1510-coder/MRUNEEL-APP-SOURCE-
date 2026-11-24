@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { AssistantSettings, PersonalMemory, SupportedLanguage } from '../types/assistant';
 import { MemoryManager } from '../utils/memoryManager';
-import { saveNewPin } from '../utils/security';
+import { saveNewPin, verifyPin } from '../utils/security';
 import { soundFx } from '../utils/audioSynthesizer';
 import { deviceBridge } from '../utils/deviceBridge';
 
@@ -38,6 +38,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [newCategory, setNewCategory] = useState<PersonalMemory['category']>('personal');
 
   // Security state
+  const [currentPinInput, setCurrentPinInput] = useState('');
   const [newPinInput, setNewPinInput] = useState('');
   const [pinChangeMsg, setPinChangeMsg] = useState('');
 
@@ -358,7 +359,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
                 <form onSubmit={handleUpdatePin} className="space-y-3">
                   <p className="text-[11px] text-amber-400/80">
-                    सध्याचा डीफॉल्ट पिन: <strong>1234</strong>. नवीन ४-अंकी गुप्त पिन सेट करा.
+                    पिन बदलण्यासाठी आधी सध्याचा पिन तपासला जाईल.
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -371,7 +372,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                     <button
                       type="submit"
-                      disabled={newPinInput.length !== 4}
+                      disabled={currentPinInput.length !== 4 || newPinInput.length !== 4}
                       className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-black font-bold text-xs cursor-pointer"
                     >
                       पिन बदला
