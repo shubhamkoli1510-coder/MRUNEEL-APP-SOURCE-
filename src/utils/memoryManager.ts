@@ -22,7 +22,6 @@ export const DEFAULT_SETTINGS: AssistantSettings = {
   wakeWordEnabled: true,
   hapticFeedback: true,
   biometricLockEnabled: false,
-  pinCode: '1234',
   offlineFirstMode: false,
 };
 
@@ -116,14 +115,20 @@ export class MemoryManager {
   public static getSettings(): AssistantSettings {
     try {
       const data = localStorage.getItem(SETTINGS_KEY);
-      return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+      if (!data) return DEFAULT_SETTINGS;
+      const stored = JSON.parse(data) as Partial<AssistantSettings> & { pinCode?: string };
+      // Strip legacy plaintext PIN values from settings loaded from older app versions.
+      const { pinCode: _legacyPinCode, ...safeStored } = stored;
+      return { ...DEFAULT_SETTINGS, ...safeStored };
     } catch {
       return DEFAULT_SETTINGS;
     }
   }
 
   public static saveSettings(settings: AssistantSettings): void {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    // Never persist a PIN in the general settings record.
+    const { pinCode: _legacyPinCode, ...safeSettings } = settings as AssistantSettings & { pinCode?: string };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(safeSettings));
   }
 
   public static getMemories(): PersonalMemory[] {
