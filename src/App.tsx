@@ -139,6 +139,7 @@ export default function App() {
             return;
           }
           await NativeWakeWord.start();
+          if (cancelled) await NativeWakeWord.stop().catch(() => undefined);
         } catch (error) {
           console.warn('Native wake-word listener unavailable; using Web Speech fallback.', error);
           if (nativeListener) {
