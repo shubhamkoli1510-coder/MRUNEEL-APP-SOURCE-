@@ -67,31 +67,13 @@ export function triggerLockout(seconds: number = 30): void {
 /**
  * Trigger Biometric Authentication via WebAuthn if supported on Android / Mobile browser
  */
+/**
+ * Fail closed until a real native Android BiometricPrompt challenge is wired.
+ * Merely detecting an available fingerprint/face sensor is NOT authentication.
+ */
 export async function authenticateBiometric(): Promise<{ success: boolean; message: string }> {
-  if (typeof window === 'undefined') {
-    return { success: false, message: 'Window not defined' };
-  }
-
-  // Check WebAuthn availability
-  if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-    try {
-      const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-      if (isAvailable) {
-        // Biometric sensor is available on device (e.g. Android Fingerprint / Face Unlock)
-        // We simulate a verified challenge or request assertion
-        return {
-          success: true,
-          message: 'बायोमेट्रिक प्रमाणीकरण यशस्वी (Biometric Verified)'
-        };
-      }
-    } catch {
-      // Fallback
-    }
-  }
-
-  // Fallback simulator for demo when WebAuthn hardware is bypassed
   return {
-    success: true,
-    message: 'हार्डवेअर बायोमेट्रिक यशस्वीरित्या प्रमाणित झाले (Biometric Authenticated)'
+    success: false,
+    message: 'बायोमेट्रिक सुरक्षा अजून native पद्धतीने जोडलेली नाही. सध्या ४-अंकी PIN वापरा.'
   };
 }
