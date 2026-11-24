@@ -70,15 +70,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleUpdatePin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPinInput.length !== 4 || !/^\d{4}$/.test(newPinInput)) {
-      setPinChangeMsg('पिन नेमका ४ अंकी असणे आवश्यक आहे (Must be 4 digits)');
+    const isFourDigits = (value: string) => value.length === 4 && [...value].every(char => char >= '0' && char <= '9');
+    if (!isFourDigits(currentPinInput) || !isFourDigits(newPinInput)) {
+      setPinChangeMsg('सध्याचा आणि नवीन पिन प्रत्येकी ४ अंकी असावा.');
       return;
     }
-    soundFx.playAffirmative();
-    deviceBridge.vibrate([40, 40, 80]);
-    await saveNewPin(newPinInput);
-    setPinChangeMsg('नवीन पिन यशस्वीरित्या सेट केला! (PIN updated)');
-    setNewPinInput('');
+
+    const currentPinIsValid = await verifyPin(currentPinInput);
+    if (!currentPinIsValid) {
+      setPinChangeMsg('सध्याचा पिन चुकीचा आहे.');
+      setCurrentPinInput('');
+      return;
+    }
+
+    try {
+      await saveNewPin(newPinInput);
+      soundFx.playAffirmative();
+      deviceBridge.vibrate([40, 40, 80]);
+      setPinChangeMsg('नवीन पिन सुरक्षितपणे सेट केला!');
+      setCurrentPinInput('');
+      setNewPinInput('');
+    } catch {
+      setPinChangeMsg('या डिव्हाइसवर सुरक्षित PIN साठवता आला नाही.');
+    }
   };
 
   return (
@@ -361,25 +375,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <p className="text-[11px] text-amber-400/80">
                     पिन बदलण्यासाठी आधी सध्याचा पिन तपासला जाईल.
                   </p>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="password"
+                      inputMode="numeric"
+                      autoComplete="current-password"
                       maxLength={4}
-                      placeholder="४ अंकी पिन (e.g. 5678)"
+                      placeholder="सध्याचा PIN"
+                      value={currentPinInput}
+                      onChange={e => setCurrentPinInput(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-black/80 border border-amber-500/40 rounded-lg px-3 py-2 text-amber-200 font-mono text-center tracking-widest text-sm focus:outline-none focus:border-amber-400"
+                    />
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      autoComplete="new-password"
+                      maxLength={4}
+                      placeholder="नवीन ४ अंकी PIN"
                       value={newPinInput}
                       onChange={e => setNewPinInput(e.target.value.replace(/\D/g, ''))}
-                      className="w-48 bg-black/80 border border-amber-500/40 rounded-lg px-3 py-2 text-amber-200 font-mono text-center tracking-widest text-sm focus:outline-none focus:border-amber-400"
+                      className="w-full bg-black/80 border border-amber-500/40 rounded-lg px-3 py-2 text-amber-200 font-mono text-center tracking-widest text-sm focus:outline-none focus:border-amber-400"
                     />
-                    <button
-                      type="submit"
-                      disabled={currentPinInput.length !== 4 || newPinInput.length !== 4}
-                      className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-black font-bold text-xs cursor-pointer"
-                    >
-                      पिन बदला
-                    </button>
                   </div>
+                  <button
+                    type="submit"
+                    disabled={currentPinInput.length !== 4 || newPinInput.length !== 4}
+                    className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-black font-bold text-xs cursor-pointer"
+                  >
+                    पिन बदला
+                  </button>
                   {pinChangeMsg && (
-                    <div className="text-emerald-400 font-mono text-xs">{pinChangeMsg}</div>
+                    <div className="text-amber-300 font-mono text-xs">{pinChangeMsg}</div>
                   )}
                 </form>
               </div>
