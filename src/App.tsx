@@ -34,7 +34,8 @@ import { CameraScanner } from './components/CameraScanner';
 import { AlarmsRemindersModal } from './components/AlarmsRemindersModal';
 import { AndroidPermissionsHub } from './components/AndroidPermissionsHub';
 import { AndroidApkExportModal } from './components/AndroidApkExportModal';
-import { SettingsModal } from './components/SettingsModal';\nimport { CodingLab } from './components/CodingLab';
+import { SettingsModal } from './components/SettingsModal';
+import { CodingLab } from './components/CodingLab';
 
 interface NativeWakeWordPlugin {
   start(): Promise<void>;
@@ -83,7 +84,8 @@ export default function App() {
   const [showAlarms, setShowAlarms] = useState<boolean>(false);
   const [showPermissions, setShowPermissions] = useState<boolean>(false);
   const [showApkExport, setShowApkExport] = useState<boolean>(false);
-  const [showSettings, setShowSettings] = useState<boolean>(false);\n  const [showCodingLab, setShowCodingLab] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [showCodingLab, setShowCodingLab] = useState<boolean>(false);
 
   // Conversation Log
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
