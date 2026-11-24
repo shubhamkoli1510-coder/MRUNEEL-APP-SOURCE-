@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(NativeTTSPlugin.class);
+        registerPlugin(NativeWakeWordPlugin.class);
         super.onCreate(savedInstanceState);
 
         // Keep screen on while assistant active
