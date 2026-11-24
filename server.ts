@@ -261,8 +261,19 @@ SELF-IMPROVEMENT FEEDBACK
 
 // Autonomous Coding Lab: generate a reviewable proposal only.
 // This endpoint NEVER writes repository files, runs shell commands, or deploys code.
+const codingRequestWindows = new Map<string, number[]>();
 app.post('/api/coding/plan', async (req: Request, res: Response) => {
   try {
+    const now = Date.now();
+    const clientKey = req.ip || 'unknown';
+    const recentRequests = (codingRequestWindows.get(clientKey) || []).filter(time => now - time < 10 * 60 * 1000);
+    if (recentRequests.length >= 5) {
+      res.status(429).json({ error: 'Coding Lab rate limit reached. Try again in a few minutes.' });
+      return;
+    }
+    recentRequests.push(now);
+    codingRequestWindows.set(clientKey, recentRequests);
+
     const { task, files = [] } = req.body ?? {};
 
     if (typeof task !== 'string' || !task.trim() || task.length > 4000) {
