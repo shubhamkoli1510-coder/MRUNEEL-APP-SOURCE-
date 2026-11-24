@@ -76,7 +76,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     soundFx.playAffirmative();
     deviceBridge.vibrate([40, 40, 80]);
     await saveNewPin(newPinInput);
-    handleSettingChange('pinCode', newPinInput);
     setPinChangeMsg('नवीन पिन यशस्वीरित्या सेट केला! (PIN updated)');
     setNewPinInput('');
   };
