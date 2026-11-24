@@ -12,33 +12,33 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.core.app.NotificationCompat
-import com.mruneel.assistant.MainActivity
 import java.util.Locale
 
 /**
- * WakeWordForegroundService
- * Provides continuous background wake word listening for "Mruneel" / "मृणील"
- * even when the Samsung Galaxy A15 phone screen is locked or turned off.
+ * Microphone service started explicitly by NativeWakeWordPlugin while the app is visible
+ * and RECORD_AUDIO permission has been granted. It stops itself after one wake event.
  */
 class WakeWordForegroundService : Service() {
+    companion object {
+        const val ACTION_WAKE_WORD = "com.mruneel.assistant.WAKE_WORD_DETECTED"
+        private const val CHANNEL_ID = "mruneel_service_channel"
+        private const val NOTIFICATION_ID = 1001
+    }
 
-    private var wakeLock: PowerManager.WakeLock? = null
     private var speechRecognizer: SpeechRecognizer? = null
     private var recognizerIntent: Intent? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var isListening = false
+    private var wakeWordTriggered = false
+    private var serviceStarted = false
 
-    private val CHANNEL_ID = "mruneel_service_channel"
-    private val NOTIFICATION_ID = 1001
-
-    private val WAKE_PATTERNS = listOf(
+    private val wakePatterns = listOf(
         "mruneel", "mrunil", "mrunal", "runeel",
         "मृणील", "मृणाल", "म्रुनील", "मरुनिल", "मृणिल", "हे मृणील"
     )
@@ -46,34 +46,31 @@ class WakeWordForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-
-        // Acquire partial WakeLock to keep audio processing alive during screen-off
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MRUNEEL::WakeWordListenerLock")
-        wakeLock?.acquire(24 * 60 * 60 * 1000L) // 24 hours max
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = createNotification()
-        startForeground(NOTIFICATION_ID, notification)
+        if (serviceStarted) return START_NOT_STICKY
+        serviceStarted = true
 
-        // Initialize Android SpeechRecognizer on main thread
+        // Plugin starts this service from a visible Activity after runtime permission approval.
+        startForeground(NOTIFICATION_ID, createNotification())
         mainHandler.post {
-            initSpeechRecognizer()
-            startListening()
+            if (!wakeWordTriggered) {
+                initSpeechRecognizer()
+                startListening()
+            }
         }
-
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun initSpeechRecognizer() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            stopSelf()
             return
         }
 
         speechRecognizer?.destroy()
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-
         recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
@@ -85,78 +82,78 @@ class WakeWordForegroundService : Service() {
         }
 
         speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {
-                isListening = true
-            }
-
+            override fun onReadyForSpeech(params: Bundle?) { isListening = true }
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
-
-            override fun onEndOfSpeech() {
-                isListening = false
-            }
+            override fun onEndOfSpeech() { isListening = false }
 
             override fun onError(error: Int) {
                 isListening = false
-                // Auto-restart listening after momentary delay (handles network or no-match pauses)
-                mainHandler.postDelayed({
-                    startListening()
-                }, 1000)
+                scheduleRestart(1200)
             }
 
             override fun onResults(results: Bundle?) {
                 isListening = false
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                checkMatches(matches)
-                // Restart listening loop
-                mainHandler.postDelayed({
-                    startListening()
-                }, 500)
+                checkMatches(results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
+                if (!wakeWordTriggered) scheduleRestart(500)
             }
 
             override fun onPartialResults(partialResults: Bundle?) {
-                val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                checkMatches(matches)
+                checkMatches(partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
             }
 
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
     }
 
+    private fun scheduleRestart(delayMs: Long) {
+        if (!wakeWordTriggered) {
+            mainHandler.postDelayed({ startListening() }, delayMs)
+        }
+    }
+
     private fun startListening() {
-        if (isListening || speechRecognizer == null || recognizerIntent == null) return
+        if (wakeWordTriggered || isListening || speechRecognizer == null || recognizerIntent == null) return
         try {
             speechRecognizer?.startListening(recognizerIntent)
-        } catch (e: Exception) {
+        } catch (error: Exception) {
             isListening = false
-            mainHandler.postDelayed({ startListening() }, 1500)
+            scheduleRestart(1500)
         }
     }
 
     private fun checkMatches(matches: ArrayList<String>?) {
-        if (matches == null) return
-        for (text in matches) {
-            val lower = text.lowercase(Locale.ROOT)
-            val isWakeWord = WAKE_PATTERNS.any { pattern -> lower.contains(pattern) }
-            if (isWakeWord) {
-                onWakeWordDetected(text)
-                break
+        if (wakeWordTriggered || matches == null) return
+        for (spokenText in matches) {
+            val lower = spokenText.lowercase(Locale.ROOT)
+            if (wakePatterns.any { pattern -> lower.contains(pattern) }) {
+                onWakeWordDetected(spokenText)
+                return
             }
         }
     }
 
     private fun onWakeWordDetected(spokenText: String) {
-        // 1. Haptic feedback pulse on Samsung Galaxy A15
+        if (wakeWordTriggered) return
+        wakeWordTriggered = true
+        isListening = false
+        mainHandler.removeCallbacksAndMessages(null)
+
+        try {
+            speechRecognizer?.stopListening()
+            speechRecognizer?.cancel()
+        } catch (ignored: Exception) { }
         triggerHapticFeedback()
 
-        // 2. Bring MRUNEEL MainActivity to foreground
-        val launchIntent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            putExtra("WAKE_WORD_TRIGGERED", true)
-            putExtra("INITIAL_SPEECH_TEXT", spokenText)
-        }
-        startActivity(launchIntent)
+        // Package-scoped, non-exported receiver bridge; do not launch an Activity from background.
+        sendBroadcast(
+            Intent(ACTION_WAKE_WORD)
+                .setPackage(packageName)
+                .putExtra("transcript", spokenText)
+        )
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     private fun triggerHapticFeedback() {
@@ -168,15 +165,17 @@ class WakeWordForegroundService : Service() {
                 @Suppress("DEPRECATION")
                 vibrator?.vibrate(120)
             }
-        } catch (ignored: Exception) {}
+        } catch (ignored: Exception) { }
     }
 
     private fun createNotification(): Notification {
-        val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, notificationIntent,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-        )
+        val notificationIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val pendingIntent = notificationIntent?.let {
+            PendingIntent.getActivity(
+                this, 0, it,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+            )
+        }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("MRUNEEL AI Active")
@@ -190,25 +189,24 @@ class WakeWordForegroundService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(
+            val channel = NotificationChannel(
                 CHANNEL_ID,
                 "MRUNEEL Background Assistant Service",
                 NotificationManager.IMPORTANCE_LOW
             )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannel(serviceChannel)
+            getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
         }
     }
 
     override fun onDestroy() {
+        wakeWordTriggered = true
         isListening = false
         mainHandler.removeCallbacksAndMessages(null)
         try {
+            speechRecognizer?.cancel()
             speechRecognizer?.destroy()
-        } catch (ignored: Exception) {}
-        wakeLock?.let {
-            if (it.isHeld) it.release()
-        }
+        } catch (ignored: Exception) { }
+        speechRecognizer = null
         super.onDestroy()
     }
 
