@@ -2,7 +2,9 @@ name: Build Android APK (MRUNEEL)
 
 on:
   push:
-    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install, feature/native-wakeword-bridge ]
+    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install, feature/native-wakeword-bridge, feature/autonomous-coding-lab ]
+  pull_request:
+    branches: [ feature/native-wakeword-bridge ]
   workflow_dispatch:
 
 jobs:
@@ -39,28 +41,9 @@ jobs:
       - name: Sync Capacitor Android
         run: npx cap sync android
 
-      - name: Prepare Android signing key
-        env:
-          MRUNEEL_KEYSTORE_BASE64: ${{ secrets.MRUNEEL_KEYSTORE_BASE64 }}
-          MRUNEEL_KEYSTORE_PASSWORD: ${{ secrets.MRUNEEL_KEYSTORE_PASSWORD }}
-        run: |
-          set -euo pipefail
-          test -n "$MRUNEEL_KEYSTORE_BASE64" || { echo "ERROR: MRUNEEL_KEYSTORE_BASE64 secret is empty or missing"; exit 1; }
-          test -n "$MRUNEEL_KEYSTORE_PASSWORD" || { echo "ERROR: MRUNEEL_KEYSTORE_PASSWORD secret is empty or missing"; exit 1; }
-          mkdir -p android/app/build
-          printf '%s' "$MRUNEEL_KEYSTORE_BASE64" | tr -cd 'A-Za-z0-9+/=' | base64 --decode > android/app/build/mruneel-upload.p12
-          test -s android/app/build/mruneel-upload.p12 || { echo "ERROR: Keystore file is empty"; exit 1; }
-          chmod 600 android/app/build/mruneel-upload.p12
-          openssl pkcs12 -in android/app/build/mruneel-upload.p12 -passin env:MRUNEEL_KEYSTORE_PASSWORD -info -noout >/dev/null 2>&1 || { echo "ERROR: Decoded keystore is invalid or password does not match. Recheck GitHub signing secrets."; exit 1; }
-          echo "SUCCESS: Android signing keystore decoded and validated."
-
-      - name: Build Signed Release APK
+      - name: Build Installable Debug APK
         working-directory: android
-        env:
-          MRUNEEL_KEYSTORE_PASSWORD: ${{ secrets.MRUNEEL_KEYSTORE_PASSWORD }}
-        run: |
-          set -o pipefail
-          gradle assembleRelease --stacktrace --info 2>&1 | tee gradle-build.log
+        run: gradle assembleDebug --stacktrace --info
 
       - name: Upload Gradle Diagnostic Log
         if: always()
@@ -71,10 +54,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Upload MRUNEEL Signed APK
+      - name: Upload MRUNEEL Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: MRUNEEL-Blue-JARVIS-Signed-APK
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: MRUNEEL-Blue-JARVIS-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
