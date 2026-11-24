@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import {
   Camera,
   Bell,
@@ -35,6 +36,13 @@ import { AndroidPermissionsHub } from './components/AndroidPermissionsHub';
 import { AndroidApkExportModal } from './components/AndroidApkExportModal';
 import { SettingsModal } from './components/SettingsModal';
 
+interface NativeWakeWordPlugin {
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  addListener(eventName: 'wakeWordDetected', listenerFunc: (event: { transcript: string }) => void): Promise<{ remove: () => Promise<void> }>;
+}
+
+const NativeWakeWord = registerPlugin<NativeWakeWordPlugin>('NativeWakeWord');
 const API_BASE_URL = 'https://mruneel-core-api.onrender.com';
 
 export default function App() {
@@ -106,27 +114,66 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Continuous Wake Word Listener: active only while MRUNEEL is idle.
-  // Automatically rearms after command capture and assistant speech completion.
+  // Android uses the native foreground listener; other platforms keep Web Speech.
+  // The listener is armed only while unlocked and idle.
   useEffect(() => {
-    if (isLocked || !settings.wakeWordEnabled || showCamera || assistantState !== 'idle') {
-      speechService.stopWakeWordListener();
-      return;
+    let cancelled = false;
+    let nativeListener: { remove: () => Promise<void> } | null = null;
+    const shouldListen = !isLocked && settings.wakeWordEnabled && !showCamera && assistantState === 'idle';
+
+    speechService.stopWakeWordListener();
+    if (!shouldListen) {
+      void NativeWakeWord.stop().catch(() => undefined);
+      return () => { cancelled = true; };
     }
 
-    speechService.startWakeWordListener(
-      extractedCommand => {
-        if (extractedCommand) {
-          handleUserQuery(extractedCommand);
-        } else {
-          startVoiceListening();
+    if (Capacitor.getPlatform() === 'android') {
+      const startNativeListener = async () => {
+        try {
+          nativeListener = await NativeWakeWord.addListener('wakeWordDetected', () => {
+            if (!cancelled) startVoiceListening();
+          });
+          if (cancelled) {
+            await nativeListener.remove();
+            nativeListener = null;
+            return;
+          }
+          await NativeWakeWord.start();
+        } catch (error) {
+          console.warn('Native wake-word listener unavailable; using Web Speech fallback.', error);
+          if (nativeListener) {
+            await nativeListener.remove().catch(() => undefined);
+            nativeListener = null;
+          }
+          if (!cancelled) {
+            speechService.startWakeWordListener(
+              extractedCommand => {
+                if (extractedCommand) handleUserQuery(extractedCommand);
+                else startVoiceListening();
+              },
+              language
+            );
+          }
         }
-      },
-      language
-    );
+      };
+      void startNativeListener();
+    } else {
+      speechService.startWakeWordListener(
+        extractedCommand => {
+          if (extractedCommand) handleUserQuery(extractedCommand);
+          else startVoiceListening();
+        },
+        language
+      );
+    }
 
     return () => {
+      cancelled = true;
       speechService.stopWakeWordListener();
+      if (nativeListener) void nativeListener.remove().catch(() => undefined);
+      if (Capacitor.getPlatform() === 'android') {
+        void NativeWakeWord.stop().catch(() => undefined);
+      }
     };
   }, [isLocked, settings.wakeWordEnabled, language, showCamera, assistantState]);
 
