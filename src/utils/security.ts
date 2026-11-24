@@ -39,6 +39,16 @@ async function derivePinKey(pin: string, salt: Uint8Array, iterations: number): 
   return new Uint8Array(bits);
 }
 
+function legacyFallbackHashPin(pin: string): string {
+  let hash = 0;
+  const salted = pin + '_mruneel_salt';
+  for (let i = 0; i < salted.length; i++) {
+    hash = (hash << 5) - hash + salted.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16);
+}
+
 async function legacyHashPin(pin: string): Promise<string> {
   if (typeof crypto === 'undefined' || !crypto.subtle) {
     throw new Error('Secure device cryptography is unavailable');
@@ -85,7 +95,7 @@ export async function verifyPin(enteredPin: string): Promise<boolean> {
     }
 
     // Upgrade existing fixed-salt SHA-256 PINs only after a successful match.
-    if ((await legacyHashPin(enteredPin)) === currentHash) {
+    if ((await legacyHashPin(enteredPin)) === currentHash || legacyFallbackHashPin(enteredPin) === currentHash) {
       await saveNewPin(enteredPin);
       return true;
     }
