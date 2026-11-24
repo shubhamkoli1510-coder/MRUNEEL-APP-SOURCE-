@@ -411,11 +411,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               <div className="p-3.5 rounded-xl hud-panel space-y-3">
-                <div className="font-bold text-amber-300 font-mono">बायोमेट्रिक ऑटो-लॉक</div>
+                <div className="font-bold text-amber-300 font-mono">ऑटो-लॉक सुरक्षा</div>
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-semibold text-amber-200">अॅप सुरू करताना सुरक्षा लॉक विचारा</span>
-                    <p className="text-[11px] text-amber-500/60">Require PIN or Biometrics on app launch</p>
+                    <p className="text-[11px] text-amber-500/60">Require PIN on app launch</p>
                   </div>
                   <input
                     type="checkbox"
