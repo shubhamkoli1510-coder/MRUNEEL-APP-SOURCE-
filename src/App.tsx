@@ -34,7 +34,7 @@ import { CameraScanner } from './components/CameraScanner';
 import { AlarmsRemindersModal } from './components/AlarmsRemindersModal';
 import { AndroidPermissionsHub } from './components/AndroidPermissionsHub';
 import { AndroidApkExportModal } from './components/AndroidApkExportModal';
-import { SettingsModal } from './components/SettingsModal';
+import { SettingsModal } from './components/SettingsModal';\nimport { CodingLab } from './components/CodingLab';
 
 interface NativeWakeWordPlugin {
   start(): Promise<void>;
@@ -83,7 +83,7 @@ export default function App() {
   const [showAlarms, setShowAlarms] = useState<boolean>(false);
   const [showPermissions, setShowPermissions] = useState<boolean>(false);
   const [showApkExport, setShowApkExport] = useState<boolean>(false);
-  const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState<boolean>(false);\n  const [showCodingLab, setShowCodingLab] = useState<boolean>(false);
 
   // Conversation Log
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
@@ -525,7 +525,7 @@ export default function App() {
         {/* Bottom Feature Navigation Deck */}
         <nav
           aria-label="Assistant Modules"
-          className="w-full grid grid-cols-5 gap-1.5 mt-2.5 pt-2 border-t border-amber-500/20 bg-black/80 backdrop-blur-md rounded-xl p-1 select-none"
+          className="w-full grid grid-cols-6 gap-1 mt-2.5 pt-2 border-t border-amber-500/20 bg-black/80 backdrop-blur-md rounded-xl p-1 select-none"
         >
           {/* 1. Camera Vision Scanner */}
           <button
@@ -565,6 +565,16 @@ export default function App() {
           >
             <Download className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
             <span className="text-[10px] text-amber-300/90 font-mono mt-1">APK बिल्ड</span>
+          </button>
+
+          {/* 5. Autonomous Coding Lab */}
+          <button
+            onClick={() => { soundFx.playKeyClick(); setShowCodingLab(true); }}
+            aria-label="Open MRUNEEL Coding Lab"
+            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-zinc-950/80 border border-emerald-500/30 hover:border-emerald-400 active:scale-95 transition-all cursor-pointer group"
+          >
+            <Code2 className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[9px] text-emerald-300/90 font-mono mt-1">CODING</span>
           </button>
 
           {/* 5. Settings & Personal Memory */}
@@ -610,6 +620,8 @@ export default function App() {
         settings={settings}
         onUpdateSettings={setSettings}
       />
+
+      <CodingLab isOpen={showCodingLab} onClose={() => setShowCodingLab(false)} />
     </div>
   );
 }
