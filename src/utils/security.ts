@@ -96,7 +96,7 @@ export async function verifyPin(enteredPin: string): Promise<boolean> {
 }
 
 export async function saveNewPin(newPin: string): Promise<void> {
-  if (!/^\\d{4}$/.test(newPin)) throw new Error('PIN must contain exactly four digits');
+  if (newPin.length !== 4 || ![...newPin].every(char => char >= '0' && char <= '9')) throw new Error('PIN must contain exactly four digits');
   const encodedHash = await hashPin(newPin);
   localStorage.setItem(PIN_STORAGE_KEY, encodedHash);
 }
