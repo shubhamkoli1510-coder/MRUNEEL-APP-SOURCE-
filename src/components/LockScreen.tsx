@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Fingerprint, Shield, Delete, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { verifyPin, isLockedOut, triggerLockout, authenticateBiometric } from '../utils/security';
+import { Shield, Delete, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { verifyPin, isLockedOut, triggerLockout } from '../utils/security';
 import { soundFx } from '../utils/audioSynthesizer';
 import { deviceBridge } from '../utils/deviceBridge';
 import { SupportedLanguage } from '../types/assistant';
@@ -15,7 +15,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, languag
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [failedAttempts, setFailedAttempts] = useState<number>(0);
   const [lockoutSec, setLockoutSec] = useState<number>(0);
-  const [isBiometricScanning, setIsBiometricScanning] = useState<boolean>(false);
   const [biometricSuccess, setBiometricSuccess] = useState<boolean>(false);
 
   // Check lockout on mount and tick
@@ -81,34 +80,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, languag
     setErrorMsg('');
   };
 
-  const handleBiometricAuth = async () => {
-    if (lockoutSec > 0 || isBiometricScanning) return;
-
-    soundFx.playScanBlip();
-    deviceBridge.vibrate(60);
-    setIsBiometricScanning(true);
-    setErrorMsg('');
-
-    try {
-      const result = await authenticateBiometric();
-      if (result.success) {
-        soundFx.playAffirmative();
-        deviceBridge.vibrate([50, 50, 100]);
-        setBiometricSuccess(true);
-        setTimeout(() => {
-          onUnlockSuccess();
-        }, 500);
-      } else {
-        soundFx.playWarning();
-        setErrorMsg(result.message);
-      }
-    } catch {
-      setErrorMsg('Biometric sensor error');
-    } finally {
-      setIsBiometricScanning(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-[#030303]/98 backdrop-blur-2xl z-50 flex flex-col items-center justify-center p-4 select-none">
       {/* Background Holographic Hex Grid */}
@@ -129,8 +100,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, languag
         </h1>
         <p className="text-xs text-amber-400/70 mb-4 font-mono text-center">
           {language === 'mr-IN'
-            ? 'बायोमेट्रिक किंवा ४-अंकी पिन प्रविष्ट करा'
-            : 'ENTER 4-DIGIT MASTER PIN OR BIOMETRICS'}
+            ? '४-अंकी पिन प्रविष्ट करा'
+            : 'ENTER 4-DIGIT MASTER PIN'}
         </p>
 
         {/* PIN Indicators */}
@@ -176,20 +147,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, languag
           ))}
 
           {/* Biometric Trigger */}
-          <button
-            onClick={handleBiometricAuth}
-            disabled={lockoutSec > 0}
-            aria-label="Scan Fingerprint or Face Biometric"
-            className={`h-14 rounded-xl hud-panel flex flex-col items-center justify-center text-amber-300 hover:text-amber-100 hover:border-amber-400 active:scale-95 transition-all cursor-pointer relative overflow-hidden ${
-              isBiometricScanning ? 'border-amber-400 shadow-[0_0_15px_#fbbf24]' : ''
-            }`}
-          >
-            <Fingerprint className={`w-6 h-6 ${isBiometricScanning ? 'text-amber-300 animate-pulse' : 'text-amber-400'}`} />
-            <span className="text-[9px] uppercase tracking-wider font-mono">बायो</span>
-            {isBiometricScanning && (
-              <div className="absolute inset-x-0 h-1 bg-amber-400 top-0 animate-hud-scan"></div>
-            )}
-          </button>
+          <div
+            aria-hidden="true"
+            className="h-14 rounded-xl border border-zinc-800/40 bg-black/30"
+          />
 
           {/* Zero Button */}
           <button
