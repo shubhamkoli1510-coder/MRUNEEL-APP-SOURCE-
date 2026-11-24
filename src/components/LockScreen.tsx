@@ -66,8 +66,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, languag
         } else {
           setErrorMsg(
             language === 'mr-IN'
-              ? `चुकीचा पिन. (डीफॉल्ट पिन: 1234) शिल्लक प्रयत्न: ${3 - newFails}`
-              : `Incorrect PIN. (Default: 1234) Remaining: ${3 - newFails}`
+              ? `चुकीचा पिन. शिल्लक प्रयत्न: ${3 - newFails}`
+              : `Incorrect PIN. Remaining: ${3 - newFails}`
           );
         }
       }
