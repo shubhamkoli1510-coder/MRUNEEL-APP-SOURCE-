@@ -1,12 +1,14 @@
 /**
- * Security Engine for MRUNEEL Assistant
- * Handles PIN hashing, biometric credential verification, and brute-force lockout protection.
+ * MRUNEEL security utilities.
+ * PINs use per-install random salts and PBKDF2-SHA-256.
+ * Legacy fixed-salt SHA-256 PINs are upgraded after successful verification.
  */
 
 const PIN_STORAGE_KEY = 'mruneel_pin_hash';
 const LOCKOUT_KEY = 'mruneel_lockout_until';
 const DEFAULT_PIN = '1234';
 const PBKDF2_ITERATIONS = 210_000;
+const SEPARATOR = String.fromCharCode(36);
 
 function toBase64(bytes: Uint8Array): string {
   let binary = '';
@@ -54,7 +56,7 @@ export async function hashPin(pin: string): Promise<string> {
   }
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const derived = await derivePinKey(pin, salt, PBKDF2_ITERATIONS);
-  return `pbkdf2-sha256${PBKDF2_ITERATIONS}${toBase64(salt)}${toBase64(derived)}`;
+  return ['pbkdf2-sha256', String(PBKDF2_ITERATIONS), toBase64(salt), toBase64(derived)].join(SEPARATOR);
 }
 
 export async function verifyPin(enteredPin: string): Promise<boolean> {
@@ -66,77 +68,11 @@ export async function verifyPin(enteredPin: string): Promise<boolean> {
       return matchesDefault;
     }
 
-    if (currentHash.startsWith('pbkdf2-sha256
-
-export function isLockedOut(): { locked: boolean; remainingSeconds: number } {
-  const lockoutUntil = localStorage.getItem(LOCKOUT_KEY);
-  if (!lockoutUntil) return { locked: false, remainingSeconds: 0 };
-
-  const until = parseInt(lockoutUntil, 10);
-  const now = Date.now();
-  if (now < until) {
-    return { locked: true, remainingSeconds: Math.ceil((until - now) / 1000) };
-  }
-
-  localStorage.removeItem(LOCKOUT_KEY);
-  return { locked: false, remainingSeconds: 0 };
-}
-
-export function triggerLockout(seconds: number = 30): void {
-  const until = Date.now() + seconds * 1000;
-  localStorage.setItem(LOCKOUT_KEY, until.toString());
-}
-
-/**
- * Trigger Biometric Authentication via WebAuthn if supported on Android / Mobile browser
- */
-/**
- * Fail closed until a real native Android BiometricPrompt challenge is wired.
- * Merely detecting an available fingerprint/face sensor is NOT authentication.
- */
-export async function authenticateBiometric(): Promise<{ success: boolean; message: string }> {
-  return {
-    success: false,
-    message: 'बायोमेट्रिक सुरक्षा अजून native पद्धतीने जोडलेली नाही. सध्या ४-अंकी PIN वापरा.'
-  };
-}
-)) {
-      const [, iterationText, saltText, expectedText] = currentHash.split('
-
-export function isLockedOut(): { locked: boolean; remainingSeconds: number } {
-  const lockoutUntil = localStorage.getItem(LOCKOUT_KEY);
-  if (!lockoutUntil) return { locked: false, remainingSeconds: 0 };
-
-  const until = parseInt(lockoutUntil, 10);
-  const now = Date.now();
-  if (now < until) {
-    return { locked: true, remainingSeconds: Math.ceil((until - now) / 1000) };
-  }
-
-  localStorage.removeItem(LOCKOUT_KEY);
-  return { locked: false, remainingSeconds: 0 };
-}
-
-export function triggerLockout(seconds: number = 30): void {
-  const until = Date.now() + seconds * 1000;
-  localStorage.setItem(LOCKOUT_KEY, until.toString());
-}
-
-/**
- * Trigger Biometric Authentication via WebAuthn if supported on Android / Mobile browser
- */
-/**
- * Fail closed until a real native Android BiometricPrompt challenge is wired.
- * Merely detecting an available fingerprint/face sensor is NOT authentication.
- */
-export async function authenticateBiometric(): Promise<{ success: boolean; message: string }> {
-  return {
-    success: false,
-    message: 'बायोमेट्रिक सुरक्षा अजून native पद्धतीने जोडलेली नाही. सध्या ४-अंकी PIN वापरा.'
-  };
-}
-);
-      const iterations = Number(iterationText);
+    if (currentHash.startsWith('pbkdf2-sha256' + SEPARATOR)) {
+      const parts = currentHash.split(SEPARATOR);
+      const iterations = Number(parts[1]);
+      const saltText = parts[2];
+      const expectedText = parts[3];
       if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > 1_000_000 || !saltText || !expectedText) {
         return false;
       }
@@ -148,7 +84,7 @@ export async function authenticateBiometric(): Promise<{ success: boolean; messa
       return difference === 0;
     }
 
-    // Upgrade existing fixed-salt SHA-256 PINs after a successful match.
+    // Upgrade existing fixed-salt SHA-256 PINs only after a successful match.
     if ((await legacyHashPin(enteredPin)) === currentHash) {
       await saveNewPin(enteredPin);
       return true;
@@ -185,11 +121,8 @@ export function triggerLockout(seconds: number = 30): void {
 }
 
 /**
- * Trigger Biometric Authentication via WebAuthn if supported on Android / Mobile browser
- */
-/**
- * Fail closed until a real native Android BiometricPrompt challenge is wired.
- * Merely detecting an available fingerprint/face sensor is NOT authentication.
+ * Biometric login remains disabled until a real native Android BiometricPrompt
+ * challenge is connected. Sensor availability alone is never authentication.
  */
 export async function authenticateBiometric(): Promise<{ success: boolean; message: string }> {
   return {
