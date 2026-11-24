@@ -55,7 +55,6 @@ export interface AssistantSettings {
   wakeWordEnabled: boolean;
   hapticFeedback: boolean;
   biometricLockEnabled: boolean;
-  pinCode: string; // 4 digits
   offlineFirstMode: boolean;
   selectedVoiceName?: string;
 }
