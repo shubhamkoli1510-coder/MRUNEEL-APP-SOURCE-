@@ -276,7 +276,7 @@ app.post('/api/coding/plan', async (req: Request, res: Response) => {
     const safeFiles = files.map((file: any) => {
       const filePath = typeof file?.path === 'string' ? file.path : '';
       const content = typeof file?.content === 'string' ? file.content : '';
-      const normalized = filePath.replace(/\\\\/g, '/');
+      const normalized = filePath.replace(/\\/g, '/');
       if (
         !normalized ||
         normalized.startsWith('/') ||
