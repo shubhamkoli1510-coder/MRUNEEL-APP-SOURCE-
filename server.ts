@@ -276,12 +276,12 @@ app.post('/api/coding/plan', async (req: Request, res: Response) => {
     const safeFiles = files.map((file: any) => {
       const filePath = typeof file?.path === 'string' ? file.path : '';
       const content = typeof file?.content === 'string' ? file.content : '';
-      const normalized = filePath.replace(/\\/g, '/');
+      const normalized = filePath.split(String.fromCharCode(92)).join('/');
       if (
         !normalized ||
         normalized.startsWith('/') ||
         normalized.split('/').includes('..') ||
-        /(^|\\/)\.env|secret|credential|keystore|\\.jks|\\.p12/i.test(normalized) ||
+        ['.env', 'secret', 'credential', 'keystore', '.jks', '.p12'].some(token => normalized.toLowerCase().includes(token)) ||
         !(normalized.startsWith('src/') || normalized.startsWith('android/app/src/') ||
           normalized === 'package.json' || normalized === 'server.ts')
       ) {
