@@ -2,7 +2,7 @@ name: Build Android APK (MRUNEEL)
 
 on:
   push:
-    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install ]
+    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install, fix/security-biometric-fail-closed-20261124 ]
   workflow_dispatch:
 
 jobs:
