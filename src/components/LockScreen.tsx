@@ -174,7 +174,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, languag
         </div>
 
         <p className="text-[11px] text-amber-500/50 mt-4 text-center font-mono">
-          MRUNEEL BIOMETRIC SECURITY SUBSYSTEM
+          MRUNEEL PIN SECURITY SUBSYSTEM
         </p>
       </div>
     </div>
