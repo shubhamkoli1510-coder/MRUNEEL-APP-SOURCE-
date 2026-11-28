@@ -12,6 +12,9 @@ import {
   Smartphone,
   ExternalLink,
   AlertTriangle,
+  Flashlight,
+  Activity,
+  BatteryCharging,
 } from 'lucide-react';
 import { AssistantSettings, PersonalMemory, SupportedLanguage } from '../types/assistant';
 import { MemoryManager } from '../utils/memoryManager';
@@ -19,6 +22,7 @@ import { saveNewPin } from '../utils/security';
 import { soundFx } from '../utils/audioSynthesizer';
 import { deviceBridge } from '../utils/deviceBridge';
 import { androidSettings } from '../utils/androidSettings';
+import { androidDeviceActions } from '../utils/androidDeviceActions';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -44,6 +48,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // Security state
   const [newPinInput, setNewPinInput] = useState('');
   const [pinChangeMsg, setPinChangeMsg] = useState('');
+  const [nativeTorch, setNativeTorch] = useState(false);
+  const [deviceActionMsg, setDeviceActionMsg] = useState('');
+  const [deviceStatus, setDeviceStatus] = useState<{batteryLevel:number|null; isCharging:boolean; isOnline:boolean; networkType:string; musicVolume:number; musicVolumeMax:number} | null>(null);
 
   if (!isOpen) return null;
 
@@ -368,6 +375,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <strong className="text-amber-300">OS-controlled settings</strong>
                   <p className="mt-1 text-amber-200/80">MRUNEEL फक्त Android Settings उघडतो. Permission, Developer Options, Accessibility किंवा special access स्वतःहून बदलत नाही. तिथे तू स्वतः निवड कर.</p>
                 </div>
+              </div>
+              <div className="p-3 rounded-xl hud-panel space-y-2">
+                <div className="font-bold text-amber-300 font-mono">Quick device actions (Android native)</div>
+                <p className="text-[11px] text-amber-400/70">खालील controls फक्त तू बटण दाबल्यावर चालतील. Torch साठी Camera permission मागितली जाऊ शकते.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => androidDeviceActions.setTorch(!nativeTorch).then(r => { setNativeTorch(r.enabled); setDeviceActionMsg(r.enabled ? 'Torch ON' : 'Torch OFF'); }).catch(e => setDeviceActionMsg(e?.message || 'Torch action failed'))}
+                    className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200 flex items-center justify-center gap-2"><Flashlight className="w-4 h-4"/>Torch {nativeTorch ? 'OFF' : 'ON'}</button>
+                  <button onClick={() => androidDeviceActions.vibrate(120).then(() => setDeviceActionMsg('Vibration triggered')).catch(e => setDeviceActionMsg(e?.message || 'Vibration failed'))}
+                    className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200">📳 Vibrate</button>
+                  <button onClick={() => androidDeviceActions.volumeDown().then(r => setDeviceActionMsg('Music volume: '+r.volume+'/'+r.max)).catch(e => setDeviceActionMsg(e?.message || 'Volume action failed'))}
+                    className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200">🔉 Volume −</button>
+                  <button onClick={() => androidDeviceActions.volumeUp().then(r => setDeviceActionMsg('Music volume: '+r.volume+'/'+r.max)).catch(e => setDeviceActionMsg(e?.message || 'Volume action failed'))}
+                    className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200">🔊 Volume +</button>
+                  <button onClick={() => androidDeviceActions.getStatus().then(r => { setDeviceStatus(r); setNativeTorch(r.torchEnabled); setDeviceActionMsg('Device status refreshed'); }).catch(e => setDeviceActionMsg(e?.message || 'Status unavailable'))}
+                    className="col-span-2 p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200 flex items-center justify-center gap-2"><Activity className="w-4 h-4"/>Read live device status</button>
+                </div>
+                {deviceActionMsg && <p className="text-emerald-300">{deviceActionMsg}</p>}
+                {deviceStatus && <div className="text-[11px] text-amber-200/80 grid grid-cols-2 gap-1 border-t border-amber-500/20 pt-2">
+                  <span>Battery: {deviceStatus.batteryLevel == null ? 'Unavailable' : deviceStatus.batteryLevel+'%'}</span>
+                  <span>Charging: {deviceStatus.isCharging ? 'Yes' : 'No'}</span>
+                  <span>Network: {deviceStatus.networkType} ({deviceStatus.isOnline ? 'Online' : 'Offline'})</span>
+                  <span>Music volume: {deviceStatus.musicVolume}/{deviceStatus.musicVolumeMax}</span>
+                </div>}
               </div>
               {[
                 { title: 'App permissions / App info', detail: 'Camera, microphone, location आणि app permissions तपासा', fn: androidSettings.openAppSettings },
