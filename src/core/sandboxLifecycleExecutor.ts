@@ -111,7 +111,11 @@ export async function runApprovedSandboxPlan(
       );
     }
 
-    for (const command of plan.request.commands) {
+    const batchTimeoutMs = (plan.request.timeoutSeconds * plan.request.commands.length + 2) * 1000;
+  const batchStartedAt = Date.now();
+  for (const command of plan.request.commands) {
+    const remainingBatchMs = batchTimeoutMs - (Date.now() - batchStartedAt);
+    if (remainingBatchMs <= 0) throw new Error("Sandbox command batch timed out.");
       const boundedCommand = "timeout -k 2 " + plan.request.timeoutSeconds +
         " bash -lc " + shellQuote(command);
       const events = await withDeadline(
@@ -121,10 +125,13 @@ export async function runApprovedSandboxPlan(
       );
       let sawExit = false;
       const iterator = events[Symbol.asyncIterator]();
-      const streamDeadlineMs = (plan.request.timeoutSeconds + 2) * 1000;
+      const streamDeadlineMs = Math.min((plan.request.timeoutSeconds + 2) * 1000, batchTimeoutMs - (Date.now() - batchStartedAt));
       const streamStartedAt = Date.now();
       while (true) {
-        const remainingStreamMs = streamDeadlineMs - (Date.now() - streamStartedAt);
+        const remainingStreamMs = Math.min(
+          streamDeadlineMs - (Date.now() - streamStartedAt),
+          batchTimeoutMs - (Date.now() - batchStartedAt),
+        );
         if (remainingStreamMs <= 0) {
           throw new Error("Sandbox command event stream timed out.");
         }
