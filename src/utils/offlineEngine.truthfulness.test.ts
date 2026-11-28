@@ -26,3 +26,10 @@ test("battery response uses supplied telemetry", () => {
   assert.match(result.spokenResponse, /61%/);
   assert.match(result.spokenResponse, /Charging/i);
 });
+
+test("alarm request without a time asks for clarification instead of defaulting", () => {
+  const result = parseOfflineCommand("set alarm", "en-US");
+  assert.equal(result.type, "SET_ALARM");
+  assert.equal(result.payload?.time, undefined);
+  assert.match(result.spokenResponse, /what time/i);
+});
