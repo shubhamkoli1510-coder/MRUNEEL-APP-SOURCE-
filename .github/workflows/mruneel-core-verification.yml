@@ -8,7 +8,8 @@ on:
       - feature/mruneel-coding-agent-consent-architecture-phase1
       - feature/mruneel-coding-lab-review-approval-ui-phase1
       - feature/mruneel-autonomous-coding-loop-phase1
-      - feature/mruneel-coding-loop-ui-integration-phase1\n      - feature/mruneel-proposal-diff-validator-phase1
+      - feature/mruneel-coding-loop-ui-integration-phase1
+      - feature/mruneel-proposal-diff-validator-phase1
   pull_request:
     branches:
       - feature/mruneel-safe-launchers-phase1
