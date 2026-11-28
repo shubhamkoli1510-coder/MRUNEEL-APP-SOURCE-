@@ -19,6 +19,24 @@ export function handleMemoryCommand(text: string, store: MemoryStore | null, lan
     store.clear();
     return { handled: true, action: "cleared", response: isMarathi ? "स्थानिक MRUNEEL आठवणी पुसल्या." : "Local MRUNEEL memories cleared." };
   }
+  const searchMatch = input.match(/^(?:search memory|find memory|शोध आठवण|मेमरी शोध)\s*[:,-]?\s*(.+)$/i);
+  if (searchMatch) {
+    const query = searchMatch[1].trim();
+    const records = store?.search(query).filter((record) => record.sensitivity === "ordinary") ?? [];
+    return { handled: true, action: "listed", response: records.length
+      ? (isMarathi ? "जुळलेल्या स्थानिक आठवणी:\\n" : "Matching local memories:\\n") + records.map((record) => "• " + record.text).join("\\n")
+      : (isMarathi ? "या शब्दांशी जुळणारी स्थानिक आठवण नाही." : "No local memories match that search.") };
+  }
+  const forgetMatch = input.match(/^(?:forget|delete memory|remove memory|आठवण पुस|ही आठवण विसर)\\s*[:,-]?\\s*(.+)$/i);
+  if (forgetMatch) {
+    const query = forgetMatch[1].trim();
+    if (!store || !query) return { handled: true, action: "empty", response: isMarathi ? "कोणती आठवण पुसायची ते सांग." : "Specify which memory to remove." };
+    const matches = store.search(query).filter((record) => record.sensitivity === "ordinary");
+    matches.forEach((record) => store.delete(record.id));
+    return { handled: true, action: matches.length ? "cleared" : "empty", response: matches.length
+      ? (isMarathi ? "जुळणाऱ्या " + matches.length + " स्थानिक आठवणी पुसल्या." : "Removed " + matches.length + " matching local memory record(s).")
+      : (isMarathi ? "जुळणारी आठवण सापडली नाही; काही पुसलं नाही." : "No matching memory found; nothing was deleted.") };
+  }
   if (/^(what do you remember|show memories|माझ्याबद्दल काय आठवतं|काय आठवतं)/i.test(input)) {
     const records = store?.list().filter((record) => record.sensitivity === "ordinary") ?? [];
     return { handled: true, action: "listed", response: records.length ? (isMarathi ? "माझ्या स्थानिक आठवणी:\n" : "My local memories:\n") + records.map((record) => "• " + record.text).join("\n") : (isMarathi ? "सध्या कोणतीही सेव्ह केलेली सामान्य आठवण नाही." : "No ordinary memories are saved yet.") };
