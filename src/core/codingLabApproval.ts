@@ -30,7 +30,7 @@ export interface CodingLabSourceFile {
 }
 
 function isCanonicalSourcePath(path: string): boolean {
-  const normalized = path.trim().replace(/\\\\/g, "/");
+  const normalized = path.trim().split(String.fromCharCode(92)).join("/");
   const segments = normalized.split("/");
   return !!normalized && !normalized.startsWith("/") &&
     !segments.some((segment) => !segment || segment === "." || segment === "..") &&
@@ -65,7 +65,7 @@ export function isMultiFileProposalReviewApproved(
   if (files.length > 5 || files.some((file) => file.content.length > 20_000)) return false;
   const total = files.reduce((sum, file) => sum + file.content.length, 0);
   if (total > 50_000) return false;
-  const paths = files.map((file) => file.path.trim().replace(/\\\\/g, "/"));
+  const paths = files.map((file) => file.path.trim().split(String.fromCharCode(92)).join("/"));
   if (files.some((file) => !isCanonicalSourcePath(file.path))) return false;
   if (new Set(paths).size !== paths.length) return false;
   return snapshot === createMultiFileProposalReviewSnapshot(task, files, proposal);
