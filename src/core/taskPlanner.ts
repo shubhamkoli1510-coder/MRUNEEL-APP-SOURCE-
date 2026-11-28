@@ -40,7 +40,7 @@ export function createTaskPlan(request: string): TaskPlan {
     add("clarify", "Confirm research scope and freshness", "Resolve the topic and required time range.", "low", false);
     add("retrieve", "Retrieve sources", "Use a connected search adapter; none is executed by this planner.", "low", false);
     add("synthesize", "Compare and summarize evidence", "Separate verified facts from uncertainty and cite sources.", "low", false);
-  } else if (/\b(call|send message|text|purchase|buy|pay|transfer|delete|share|publish|install|uninstall)\b|कॉल कर|मेसेज पाठव|खरेदी|पेमेंट|पाठव|हटव/i.test(normalized)) {
+  } else if (/\b(call|send message|send a message|text|purchase|buy|pay|transfer|delete|share|publish|install|uninstall)\b|कॉल कर|मेसेज पाठव|खरेदी|पेमेंट|पाठव|हटव/i.test(normalized)) {
     add("confirm_details", "Confirm target and exact action", "Validate recipient, content, amount or target before any action.", "medium", true);
     add("approval", "Obtain explicit user approval", "No external action may proceed without a clear final confirmation.", "high", true);
     add("execute", "Execute through an authorized adapter", "Only if an adapter is available and the platform permits it.", "high", true);
