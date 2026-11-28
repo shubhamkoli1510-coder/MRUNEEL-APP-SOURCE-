@@ -11,7 +11,7 @@ test("disabled adapters are not routable", () => {
   assert.equal(canRouteToTool("coding_lab"), false);
 });
 test("only enabled tools appear in default list", () => {
-  assert.deepEqual(listTools().map((tool) => tool.id), ["conversation"]);
+  assert.deepEqual(listTools().map((tool) => tool.id), ["conversation", "research"]);
 });
 test("high-impact external action is approval-gated", () => {
   const tool = getTool("external_action");
