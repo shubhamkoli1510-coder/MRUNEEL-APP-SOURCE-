@@ -65,6 +65,8 @@ jobs:
 
       - name: Build Signed Release APK
         working-directory: android
+        env:
+          MRUNEEL_KEYSTORE_PASSWORD: ${{ secrets.MRUNEEL_KEYSTORE_PASSWORD }}
         run: gradle assembleRelease --stacktrace --info
 
       - name: Upload Gradle Diagnostic Log
