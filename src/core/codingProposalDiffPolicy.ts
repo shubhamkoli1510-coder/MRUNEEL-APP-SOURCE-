@@ -38,36 +38,82 @@ export function validateCodingProposalDiff(
     if (!safePath(normalized)) errors.push("Unsafe changed-file path: " + p);
     if (!sourcePaths.has(normalized)) errors.push("Changed file was not among fetched sources: " + p);
   }
+
   const lines = diff.split(/\r?\n/);
   const headerPairs: Array<{ oldPath: string | null; newPath: string | null }> = [];
-  const consumedNewHeaders = new Set<number>();
+  let inHunk = false;
+  let oldRemaining = 0;
+  let newRemaining = 0;
+  let sawHunk = false;
+
+  // Parse file headers only outside hunks. Added/removed source lines can
+  // legitimately begin with "+++" or "---" and must not be mistaken for headers.
   for (let i = 0; i < lines.length; i++) {
-    if (!lines[i].startsWith("--- ")) continue;
-    const next = lines[i + 1];
-    if (!next?.startsWith("+++ ")) {
-      errors.push("Unified diff headers must use ordered --- / +++ pairs.");
+    const line = lines[i];
+
+    if (inHunk) {
+      if (line.startsWith("\\")) continue; // no-newline marker
+      if (line.startsWith(" ")) {
+        oldRemaining--;
+        newRemaining--;
+      } else if (line.startsWith("-")) {
+        oldRemaining--;
+      } else if (line.startsWith("+")) {
+        newRemaining--;
+      } else {
+        errors.push("Malformed unified diff hunk content.");
+        continue;
+      }
+      if (oldRemaining < 0 || newRemaining < 0) {
+        errors.push("Unified diff hunk contains more lines than its header declares.");
+        inHunk = false;
+      } else if (oldRemaining === 0 && newRemaining === 0) {
+        inHunk = false;
+      }
       continue;
     }
-    if (!lines[i].startsWith("--- a/") || !next.startsWith("+++ b/")) {
-      errors.push("Diff headers must use --- a/old-path and +++ b/new-path for in-place edits.");
+
+    const hunk = line.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
+    if (hunk) {
+      sawHunk = true;
+      oldRemaining = hunk[2] === undefined ? 1 : Number(hunk[2]);
+      newRemaining = hunk[4] === undefined ? 1 : Number(hunk[4]);
+      inHunk = oldRemaining > 0 || newRemaining > 0;
+      continue;
     }
-    headerPairs.push({ oldPath: headerPath(lines[i]), newPath: headerPath(next) });
-    consumedNewHeaders.add(i + 1);
-    i++;
-  }
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith("+++ ") && !consumedNewHeaders.has(i)) {
+
+    if (line.startsWith("--- ")) {
+      const next = lines[i + 1];
+      if (!next?.startsWith("+++ ")) {
+        errors.push("Unified diff headers must use ordered --- / +++ pairs.");
+        continue;
+      }
+      if (!line.startsWith("--- a/") || !next.startsWith("+++ b/")) {
+        errors.push("Diff headers must use --- a/old-path and +++ b/new-path for in-place edits.");
+      }
+      headerPairs.push({ oldPath: headerPath(line), newPath: headerPath(next) });
+      i++;
+      continue;
+    }
+    if (line.startsWith("+++ ")) {
       errors.push("Unified diff contains an unpaired +++ header.");
     }
   }
+  if (inHunk) errors.push("Unified diff hunk ended before all declared lines were present.");
   if (!headerPairs.length) errors.push("Unified diff file headers are missing.");
+
   const changedPaths = [...new Set(headerPairs.flatMap(pair => [pair.oldPath, pair.newPath].filter((p): p is string => p !== null)))];
   for (const pair of headerPairs) {
     if (!pair.oldPath || !pair.newPath || pair.oldPath !== pair.newPath) errors.push("Only in-place edits are allowed; file add/delete/rename headers are rejected.");
   }
   if (changedPaths.length !== headerPairs.length) errors.push("Diff contains duplicate or ambiguous file headers.");
-  if (!lines.some(line => line.startsWith("@@"))) errors.push("Diff contains no hunk.");
-  if (!lines.some(line => (line.startsWith("+") && !line.startsWith("+++")) || (line.startsWith("-") && !line.startsWith("---")))) errors.push("Diff contains no changed lines.");
+  if (!sawHunk) errors.push("Diff contains no hunk.");
+  if (!lines.some(line => (line.startsWith("+") && !line.startsWith("+++")) || (line.startsWith("-") && !line.startsWith("---"))) ||
+      lines.some(line => line.startsWith("+++") && line !== "+++")) {
+    // Changed-line existence is additionally enforced by the parsed hunk counts below.
+    const hasChange = lines.some(line => line.startsWith("+") || line.startsWith("-"));
+    if (!hasChange) errors.push("Diff contains no changed lines.");
+  }
   if (proposal.filesToChange?.length && proposal.filesToChange.map(normalize).sort().join("|") !== changedPaths.map(normalize).sort().join("|")) errors.push("filesToChange list does not match diff headers.");
   for (const p of changedPaths) {
     if (!safePath(p)) errors.push("Unsafe diff path: " + p);
