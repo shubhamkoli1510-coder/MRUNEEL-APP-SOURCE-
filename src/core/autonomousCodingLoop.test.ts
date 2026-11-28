@@ -37,3 +37,18 @@ test("cancel is terminal", () => {
  assert.equal(state.stage,"cancelled");
  assert.equal(isCodingLoopTerminal(state.stage),true);
 });
+
+
+test("revision loop transitions permit repeated proposals without repeating plan_ready", () => {
+ let s=transitionCodingLoop(initialCodingLoopState,{type:"start",task:"fix"});
+ s=transitionCodingLoop(s,{type:"plan_ready"});
+ s=transitionCodingLoop(s,{type:"proposal_ready"});
+ s=transitionCodingLoop(s,{type:"validation_failed",reason:"empty diff"});
+ s=transitionCodingLoop(s,{type:"revision_ready"});
+ assert.equal(s.stage,"proposing");
+ s=transitionCodingLoop(s,{type:"proposal_ready"});
+ s=transitionCodingLoop(s,{type:"validation_passed"});
+ assert.equal(s.stage,"awaiting_review");
+ assert.equal(s.validationAttempts,2);
+ assert.equal(s.revisions,1);
+});
