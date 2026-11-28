@@ -40,6 +40,7 @@ export function validateCodingProposalDiff(
   }
   const lines = diff.split(/\r?\n/);
   const headerPairs: Array<{ oldPath: string | null; newPath: string | null }> = [];
+  const consumedNewHeaders = new Set<number>();
   for (let i = 0; i < lines.length; i++) {
     if (!lines[i].startsWith("--- ")) continue;
     const next = lines[i + 1];
@@ -47,8 +48,17 @@ export function validateCodingProposalDiff(
       errors.push("Unified diff headers must use ordered --- / +++ pairs.");
       continue;
     }
+    if (!lines[i].startsWith("--- a/") || !next.startsWith("+++ b/")) {
+      errors.push("Diff headers must use --- a/old-path and +++ b/new-path for in-place edits.");
+    }
     headerPairs.push({ oldPath: headerPath(lines[i]), newPath: headerPath(next) });
+    consumedNewHeaders.add(i + 1);
     i++;
+  }
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith("+++ ") && !consumedNewHeaders.has(i)) {
+      errors.push("Unified diff contains an unpaired +++ header.");
+    }
   }
   if (!headerPairs.length) errors.push("Unified diff file headers are missing.");
   const changedPaths = [...new Set(headerPairs.flatMap(pair => [pair.oldPath, pair.newPath].filter((p): p is string => p !== null)))];

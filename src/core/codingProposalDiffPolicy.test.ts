@@ -35,3 +35,10 @@ test("rejects header pairs with path mismatch, missing pair, or rename", () => {
  const unpaired = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n@@ -1 +1 @@\n-old\n+new"), sources);
  assert.ok(unpaired.errors.some(e => e.includes("ordered")));
 });
+
+test("rejects orphan +++ headers and malformed header prefixes", () => {
+ const orphan = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@\n-old\n+new"), sources);
+ assert.ok(orphan.errors.some(e => e.includes("unpaired +++")));
+ const malformed = validateCodingProposalDiff(proposal("--- b/src/core/a.ts\n+++ a/src/core/a.ts\n@@ -1 +1 @@\n-old\n+new"), sources);
+ assert.ok(malformed.errors.some(e => e.includes("must use --- a/old-path")));
+});
