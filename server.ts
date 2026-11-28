@@ -3,6 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { createCodingAgentDraftPR } from './src/core/codingAgentGitHub';
 
 dotenv.config();
 
@@ -400,6 +401,53 @@ app.post('/api/coding/plan', async (req: Request, res: Response) => {
     const message = (error as Error).message || 'Coding Lab request failed';
     const status = message.includes('allowlist') || message.includes('limit') ? 400 : 500;
     res.status(status).json({ error: message });
+  }
+});
+
+// GitHub Coding Agent write endpoint. Disabled unless two server-side secrets and feature flag are set.
+const codingAgentWriteWindows = new Map<string, number[]>();
+app.post('/api/coding-agent/draft-pr', async (req: Request, res: Response) => {
+  const enabled = process.env.MRUNEEL_CODING_AGENT_ENABLED === 'true';
+  const sharedSecret = process.env.MRUNEEL_CODING_AGENT_TOKEN;
+  const githubToken = process.env.GITHUB_TOKEN;
+  if (!enabled || !sharedSecret || !githubToken) {
+    res.status(503).json({ error: 'Coding Agent write integration is disabled or not configured.' });
+    return;
+  }
+  const authorization = req.headers.authorization;
+  if (typeof authorization !== 'string' || authorization !== `Bearer ${sharedSecret}`) {
+    res.status(401).json({ error: 'Unauthorized Coding Agent request.' });
+    return;
+  }
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const recent = (codingAgentWriteWindows.get(ip) || []).filter(time => now - time < 60 * 60 * 1000);
+  if (recent.length >= 2) {
+    res.status(429).json({ error: 'Coding Agent write rate limit reached. Maximum 2 draft PRs per hour.' });
+    return;
+  }
+  recent.push(now);
+  codingAgentWriteWindows.set(ip, recent);
+  try {
+    const payload = req.body;
+    if (!payload || payload.approved !== true) {
+      res.status(400).json({ error: 'Explicit user approval is required.' });
+      return;
+    }
+    if (typeof payload.task !== 'string' || !Array.isArray(payload.files)) {
+      res.status(400).json({ error: 'Task and files are required.' });
+      return;
+    }
+    const result = await createCodingAgentDraftPR({
+      task: payload.task,
+      approved: payload.approved,
+      files: payload.files,
+    }, githubToken);
+    res.status(201).json({ ok: true, ...result, merged: false, deployed: false });
+  } catch (error) {
+    const message = (error as Error).message || 'Coding Agent write failed.';
+    console.error('Coding Agent GitHub integration error:', message);
+    res.status(400).json({ error: 'Draft PR creation failed. No success was reported.', details: message.slice(0, 300) });
   }
 });
 
