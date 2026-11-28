@@ -15,6 +15,7 @@ export interface OfflineAction {
     | 'TOGGLE_TORCH'
     | 'ADJUST_VOLUME'
     | 'OPEN_SCREEN'
+    | 'OPEN_APP'
     | 'ADD_NOTE'
     | 'SET_REMINDER'
     | 'OPEN_CAMERA'
@@ -191,6 +192,29 @@ export function parseOfflineCommand(
         newContext: { ...context?.conversationalContext, lastTopic: 'battery' }
       };
     }
+  }
+
+  // 3. USER-REQUESTED APP LAUNCH: fixed native allowlist only
+  const appAliases: Array<[RegExp, string, string]> = [
+    [/whatsapp|व्हॉट्स.?अॅप|व्हाट्स.?एप/i, 'whatsapp', 'WhatsApp'],
+    [/youtube|यूट्यूब/i, 'youtube', 'YouTube'],
+    [/chrome|क्रोम/i, 'chrome', 'Chrome'],
+    [/google maps|maps|नकाशे|गूगल मॅप/i, 'maps', 'Maps'],
+    [/calculator|कॅल्क्युलेटर|गणक/i, 'calculator', 'Calculator'],
+    [/phone app|फोन अॅप|फोन app/i, 'phone', 'Phone'],
+    [/camera app|कॅमेरा अॅप/i, 'camera', 'Camera'],
+    [/android settings|settings app|सेटिंग्ज अॅप/i, 'settings', 'Settings'],
+  ];
+  const appMatch = appAliases.find(([pattern]) => pattern.test(clean));
+  if (appMatch && /(open|launch|उघड|चालू कर|खोल)/i.test(clean)) {
+    const appId = appMatch[1];
+    const label = appMatch[2];
+    return {
+      type: 'OPEN_APP',
+      payload: { appId },
+      spokenResponse: lang === 'mr-IN' ? label + ' अॅप उघडण्याची विनंती करतो.' : 'Requesting ' + label + ' to open.',
+      actionTaken: label + ' launch requested',
+    };
   }
 
   // 3. SAFE DEVICE BRIDGE COMMANDS (screen launches + bounded volume)
