@@ -44,9 +44,9 @@ test("rejects orphan +++ headers and malformed header prefixes", () => {
 });
 
 test("does not confuse added or removed source lines with file headers", () => {
- const added = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -0,0 +1,1 @@\n+++ this is source content"));
+ const added = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -0,0 +1,1 @@\n+++ this is source content"), sources);
  assert.equal(added.ok, true, added.errors.join("; "));
- const removed = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1,1 +0,0 @@\n--- this is source content"));
+ const removed = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1,1 +0,0 @@\n--- this is source content"), sources);
  assert.equal(removed.ok, true, removed.errors.join("; "));
 });
 
@@ -64,11 +64,11 @@ test("parses a second file header only after the previous hunk is complete", () 
 });
 
 test("rejects hunks whose declared line counts are incomplete", () => {
- const incomplete = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1,2 +1,2 @@\n-old\n+new"));
+ const incomplete = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1,2 +1,2 @@\n-old\n+new"), sources);
  assert.ok(incomplete.errors.some(e => e.includes("ended before all declared lines")));
 });
 
 test("rejects context-only hunks with no actual edit", () => {
- const contextOnly = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@\n same"));
+ const contextOnly = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@\n same"), sources);
  assert.ok(contextOnly.errors.some(e => e.includes("no changed lines")));
 });
