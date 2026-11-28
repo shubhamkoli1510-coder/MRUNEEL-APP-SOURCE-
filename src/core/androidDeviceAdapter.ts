@@ -4,10 +4,12 @@ import type { TaskAdapter, AdapterResult } from "./taskExecutor";
 export interface AndroidActionPort {
   isAndroid: () => boolean;
   openScreen: (target: "wifi" | "bluetooth" | "settings" | "camera" | "dialer") => Promise<void>;
+  launchApp: (appId: "whatsapp" | "youtube" | "chrome" | "maps" | "phone" | "camera" | "calculator" | "settings") => Promise<{ appId: string; packageName: string }>;
   volumeUp: () => Promise<{ volume: number; max: number }>;
   volumeDown: () => Promise<{ volume: number; max: number }>;
 }
 const supportedTargets = new Set(["wifi", "bluetooth", "settings", "camera", "dialer"]);
+const supportedApps = new Set(["whatsapp", "youtube", "chrome", "maps", "phone", "camera", "calculator", "settings"]);
 
 /** Adapter is dependency-injected for tests and only recognizes existing offline allowlisted intents. */
 export function createAndroidDeviceAdapter(port: AndroidActionPort): TaskAdapter {
@@ -17,6 +19,12 @@ export function createAndroidDeviceAdapter(port: AndroidActionPort): TaskAdapter
     async execute(request): Promise<AdapterResult> {
       if (!port.isAndroid()) return { ok: false, summary: "Native Android adapter unavailable on this platform." };
       const intent = parseOfflineCommand(request);
+      if (intent.type === "OPEN_APP") {
+        const appId = intent.payload?.appId;
+        if (typeof appId !== "string" || !supportedApps.has(appId)) return { ok: false, summary: "App is not in the fixed allowlist; no launch attempted." };
+        const launched = await port.launchApp(appId as Parameters<AndroidActionPort["launchApp"]>[0]);
+        return { ok: true, summary: "Allowlisted app launch confirmed: " + launched.appId, data: launched };
+      }
       if (intent.type === "OPEN_SCREEN") {
         const target = intent.payload?.target;
         if (typeof target !== "string" || !supportedTargets.has(target)) return { ok: false, summary: "Unsupported Android target; no action executed." };
