@@ -161,3 +161,25 @@ test("does not upload or run if sandbox creation fails", async () => {
   assert.equal(result.sandboxId, null);
   assert.deepEqual(calls, ["create-failed"]);
 });
+
+
+test("times out stalled command event streams and still terminates", async () => {
+  const input = {
+    commands: ["npm run test:sandbox-policy"],
+    files: [{ path: "src/core/example.ts", content: "ok" }],
+    timeoutSeconds: 1,
+    networkPolicy: "deny-all" as const,
+  };
+  const review = buildSandboxExecutionPlan(input);
+  const plan = buildSandboxExecutionPlan({ ...input, approvedPlanHash: review.planHash ?? undefined });
+  const reviewedPolicy = buildSandboxLifecyclePolicy(plan);
+  const policy = { ...reviewedPolicy, executionEnabled: true };
+  const { driver, calls } = mockDriver({
+    exec: async () => (async function* () { await new Promise<void>(() => {}); })(),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /event stream timed out/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+});
