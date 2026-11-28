@@ -32,7 +32,10 @@ test("unknown task asks for clarification", () => {
 test("capability inventory accurately marks planned and partial domains", () => {
   const summary = capabilitySummary();
   assert.equal(summary.total, 13);
-  assert.ok(summary.partial > 0 && summary.planned > 0);\n  assert.equal(getCapability("proactive")?.status, "planned");
-  assert.equal(getCapability("research")?.status, "partial");\n  assert.equal(getCapability("automation")?.status, "partial");\n  assert.match(getCapability("research")?.summary ?? "", /Google Search grounding/);
+  assert.ok(summary.partial > 0 && summary.planned > 0);
+  assert.equal(getCapability("proactive")?.status, "planned");
+  assert.equal(getCapability("research")?.status, "partial");
+  assert.equal(getCapability("automation")?.status, "partial");
+  assert.match(getCapability("research")?.summary ?? "", /Google Search grounding/);
   assert.ok(listCapabilities("partial").every((item) => item.status === "partial"));
 });
