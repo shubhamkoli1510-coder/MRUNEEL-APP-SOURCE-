@@ -28,6 +28,7 @@ test("device executor refuses direct command when adapter says platform unavaila
     volumeUp: async () => ({ volume: 1, max: 10 }),
     volumeDown: async () => ({ volume: 1, max: 10 }),
     launchApp: async (appId) => ({ appId, packageName: "com.whatsapp" }),
+    requestSystemAlarm: async (hour, minute) => ({ hour, minute, awaitingUserConfirmation: true }),
   });
   const result = await executePlanStep({ plan: createTaskPlan("open camera"), adapter, approved: true });
   assert.equal(result.status, "failed");
