@@ -29,6 +29,7 @@ import { runAgentTurn } from './core/agentKernel';
 import { createTaskPlan } from './core/taskPlanner';
 import { executePlanStep } from './core/taskExecutor';
 import { androidDeviceAdapter } from './core/androidDeviceAdapterNative';
+import { createMemoryCommandStore, handleMemoryCommand } from './core/memoryCommands';
 
 // Components
 import { TelemetryBar } from './components/TelemetryBar';
@@ -191,7 +192,8 @@ export default function App() {
     if (!queryText.trim()) return;
 
     // Brain Router: classify and gate high-risk external actions before AI processing.
-    const agentTurn = runAgentTurn({ text: queryText });\n    const brainRoute = agentTurn.route;
+    const agentTurn = runAgentTurn({ text: queryText });
+    const brainRoute = agentTurn.route;
 
     // Add user message to conversation log
     const userMsg: ChatMessage = {
@@ -204,6 +206,20 @@ export default function App() {
     setMessages(prev => [...prev, userMsg]);
     setAssistantState('thinking');
     setInterimVoiceText('');
+
+    // Explicit local-memory commands: save, recall, and clear only.
+    // Storage stays on this device; nothing is uploaded or implicitly remembered.
+    const memoryCommand = handleMemoryCommand(queryText, createMemoryCommandStore(), language === 'mr-IN' ? 'mr-IN' : 'en-US');
+    if (memoryCommand.handled) {
+      const memoryReply: ChatMessage = {
+        id: `bot-${Date.now()}`, sender: 'mruneel', text: memoryCommand.response, language, timestamp: Date.now(),
+        isOfflineResponse: !navigator.onLine, actionsTaken: [`Local memory: ${memoryCommand.action}`],
+      };
+      setMessages(prev => [...prev, memoryReply]);
+      setAssistantState('speaking');
+      speechService.speak(memoryCommand.response, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      return;
+    }
 
     // Never let high-risk requests be treated as completed actions by the chat model.
     if (brainRoute.disposition === 'approval_required' && brainRoute.decision.risk === 'high') {
