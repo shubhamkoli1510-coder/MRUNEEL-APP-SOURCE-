@@ -221,3 +221,16 @@ test("rejects malformed sandbox output and exit events", async () => {
     assert.ok(calls.includes("terminate"));
   }
 });
+
+
+test("rejects unknown sandbox event types", async () => {
+  const { plan, policy } = approvedPlan();
+  const { driver, calls } = mockDriver({
+    exec: async () => (async function* () { yield { type: "heartbeat" } as any; })(),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /unknown event type/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+});
