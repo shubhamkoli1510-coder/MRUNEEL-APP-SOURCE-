@@ -31,7 +31,8 @@ export function handleMemoryCommand(text: string, store: MemoryStore | null, lan
   if (SENSITIVE_HINTS.test(memoryText)) return { handled: true, action: "blocked", response: isMarathi ? "संवेदनशील माहिती (पासवर्ड, आरोग्य, आर्थिक तपशील इ.) मी memory मध्ये सेव्ह करत नाही." : "I won't save sensitive information such as credentials, health, or financial details." };
   if (!store) return { handled: true, action: "blocked", response: isMarathi ? "या डिव्हाइसवर local memory उपलब्ध नाही; काहीही सेव्ह केलेलं नाही." : "Local memory is unavailable; nothing was saved." };
   const result = store.save(memoryText, { explicitConsent: true, sensitivity: "ordinary" });
-  return result.saved
-    ? { handled: true, action: "saved", response: isMarathi ? "ठीक, ही सामान्य आठवण या डिव्हाइसवर सेव्ह केली. Cloud वर पाठवलेली नाही." : "Saved this ordinary memory locally on this device. It was not sent to the cloud." }
-    : { handled: true, action: "blocked", response: result.reason };
+  if (result.saved === true) {
+    return { handled: true, action: "saved", response: isMarathi ? "ठीक, ही सामान्य आठवण या डिव्हाइसवर सेव्ह केली. Cloud वर पाठवलेली नाही." : "Saved this ordinary memory locally on this device. It was not sent to the cloud." };
+  }
+  return { handled: true, action: "blocked", response: result.reason };
 }
