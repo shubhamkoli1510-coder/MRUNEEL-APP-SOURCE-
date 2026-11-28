@@ -114,7 +114,7 @@ test("rejects paths containing whitespace or platform-special characters", () =>
 });
 
 test("rejects control characters in diff paths", () => {
- const unsafePath = "src/core/a\\u0000.ts";
+ const unsafePath = "src/core/a\u0000.ts";
  const r = validateCodingProposalDiff(proposal("--- a/" + unsafePath + "\n+++ b/" + unsafePath + "\n@@ -1 +1 @@\n-old\n+new"), sources);
  assert.ok(r.errors.some(e => e.includes("Unsafe diff path")));
 });
