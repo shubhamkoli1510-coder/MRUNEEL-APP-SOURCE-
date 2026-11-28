@@ -380,6 +380,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="font-bold text-amber-300 font-mono">Quick device actions (Android native)</div>
                 <p className="text-[11px] text-amber-400/70">खालील controls फक्त तू बटण दाबल्यावर चालतील. Torch साठी Camera permission मागितली जाऊ शकते.</p>
                 <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => androidDeviceActions.openScreen('wifi').then(() => setDeviceActionMsg('Wi-Fi settings opened')).catch(e => setDeviceActionMsg(e?.message || 'Could not open Wi-Fi settings'))}
+                    className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200">📶 Wi-Fi settings</button>
+                  <button onClick={() => androidDeviceActions.openScreen('bluetooth').then(() => setDeviceActionMsg('Bluetooth settings opened')).catch(e => setDeviceActionMsg(e?.message || 'Could not open Bluetooth settings'))}
+                    className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200">ᛒ Bluetooth settings</button>
+                  <button onClick={() => androidDeviceActions.openScreen('settings').then(() => setDeviceActionMsg('Android Settings opened')).catch(e => setDeviceActionMsg(e?.message || 'Could not open Settings'))}
+                    className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200">⚙ Android Settings</button>
+                  <button onClick={() => androidDeviceActions.openScreen('camera').then(() => setDeviceActionMsg('Camera app opened')).catch(e => setDeviceActionMsg(e?.message || 'Could not open camera'))}
+                    className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200">📷 Camera app</button>
+                  <button onClick={() => androidDeviceActions.openScreen('dialer').then(() => setDeviceActionMsg('Dialer opened; no call placed')).catch(e => setDeviceActionMsg(e?.message || 'Could not open dialer'))}
+                    className="col-span-2 p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200">☎ Phone dialer (no call)</button>
                   <button onClick={() => androidDeviceActions.setTorch(!nativeTorch).then(r => { setNativeTorch(r.enabled); setDeviceActionMsg(r.enabled ? 'Torch ON' : 'Torch OFF'); }).catch(e => setDeviceActionMsg(e?.message || 'Torch action failed'))}
                     className="p-2.5 rounded-lg border border-amber-500/30 bg-black/70 text-amber-200 flex items-center justify-center gap-2"><Flashlight className="w-4 h-4"/>Torch {nativeTorch ? 'OFF' : 'ON'}</button>
                   <button onClick={() => androidDeviceActions.vibrate(120).then(() => setDeviceActionMsg('Vibration triggered')).catch(e => setDeviceActionMsg(e?.message || 'Vibration failed'))}
