@@ -308,7 +308,8 @@ export default function App() {
         if (!res.ok) throw new Error(data.details || data.error || 'Research request failed');
         const sources = Array.isArray(data.sources) ? data.sources as ResearchSource[] : [];
         const answer = typeof data.text === 'string' ? data.text : 'Research provider returned no answer.';
-        const displayText = formatResearchResponse(answer, sources);
+        const searchQueries = Array.isArray(data.searchQueries) ? data.searchQueries.filter((q: unknown): q is string => typeof q === 'string') : [];
+        const displayText = formatResearchResponse(answer, sources, searchQueries);
         const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: displayText, language, timestamp: Date.now(), actionsTaken: [`Grounded research: ${sources.length} sources`] };
         setMessages(prev => [...prev, reply]);
         setAssistantState('speaking');
