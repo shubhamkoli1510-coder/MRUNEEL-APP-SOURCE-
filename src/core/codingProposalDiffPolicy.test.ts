@@ -74,7 +74,7 @@ test("rejects context-only hunks with no actual edit", () => {
 });
 
 test("rejects malformed hunk headers instead of accepting a valid prefix", () => {
- const malformed = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@ trailing-junk\n-old\n+new"), sources);
+ const malformed = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@trailing-junk\n-old\n+new"), sources);
  assert.ok(malformed.errors.some(e => e.includes("Malformed unified diff hunk header")));
 });
 
