@@ -8,7 +8,7 @@ export interface SandboxLifecycleLimits {
 
 export interface SandboxLifecyclePolicyResult {
   allowedToPrepare: boolean;
-  executionEnabled: false;
+  executionEnabled: boolean;
   requiresExplicitApproval: true;
   createOnlyAfterApproval: true;
   waitForRunningBeforeUpload: true;
