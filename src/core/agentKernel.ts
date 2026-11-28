@@ -8,7 +8,7 @@ export interface AgentTurnResult {
   route: BrainRoute;
   plan: TaskPlan;
   relevantMemory: StoredMemoryRecord[];
-  mode: "answer" | "plan" | "approval_required" | "adapter_unavailable" | "clarify";
+  mode: "answer" | "research" | "plan" | "approval_required" | "adapter_unavailable" | "clarify";
   userMessage: string;
   executionStarted: false;
 }
@@ -34,6 +34,9 @@ export function runAgentTurn(input: AgentTurnInput): AgentTurnResult {
   } else if (route.requiresApproval || plan.requiresApproval) {
     mode = "approval_required";
     userMessage = "हे काम करण्यापूर्वी तुझी स्पष्ट परवानगी आवश्यक आहे. आत्ता कोणतीही action execute केलेली नाही.";
+  } else if (route.decision.intent === "research" && route.disposition === "route") {
+    mode = "research";
+    userMessage = "Web research handoff is available. Search results must be fetched and sources shown before claiming current information.";
   } else if (route.decision.intent === "conversation" && route.disposition === "route") {
     mode = "answer";
     userMessage = "सामान्य संवादासाठी तयार. AI उत्तर provider कडे पाठवण्याचा handoff उपलब्ध आहे.";
