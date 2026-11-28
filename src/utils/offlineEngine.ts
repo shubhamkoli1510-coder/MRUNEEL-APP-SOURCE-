@@ -140,7 +140,7 @@ export function parseOfflineCommand(
         type: 'SET_ALARM',
         spokenResponse: `अलार्म की ${time} बजे वाली समय-सूचना ऐप में दर्ज है; फोन का system alarm अभी सेट नहीं हुआ है।`,
         payload: { time, label: 'MRUNEEL अलार्म' },
-        actionTaken: `अलार्म सेट: ${time}`,
+        actionTaken: `ऐपमध्ये अलार्म नोंद: ${time} (system alarm नाही)`,
         newContext: { ...context?.conversationalContext, lastTopic: 'alarm' }
       };
     } else {
@@ -347,7 +347,7 @@ export function parseOfflineCommand(
         type: 'SET_REMINDER',
         spokenResponse: `रिमाइंडर ऐप में दर्ज किया: "${reminderText}". Notification schedule अभी उपलब्ध नहीं है.`,
         payload: { title: reminderText },
-        actionTaken: `रिमाइंडर सेट: ${reminderText}`,
+        actionTaken: `अॅपमध्ये स्मरणपत्र नोंद (notification नाही): ${reminderText}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'reminder' }
       };
     } else {
