@@ -11,8 +11,8 @@ export interface MRUNEELToolDescriptor {
 }
 
 /**
- * Metadata-only registry. It deliberately contains no executable handlers:
- * actual tool adapters must be wired and capability-checked separately.
+ * Capability descriptors only. UI/server adapters are wired at runtime in App and server routes.
+ * A tool marked enabled still follows its approval and availability checks.
  */
 export const toolRegistry: readonly MRUNEELToolDescriptor[] = Object.freeze([
   { id: "conversation", category: "conversation", description: "Answer and explain using the configured AI provider.", risk: "low", requiresApproval: false, enabled: true },
