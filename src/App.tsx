@@ -447,13 +447,17 @@ export default function App() {
           throw new Error(data.details || data.error || 'Server processing error');
         }
 
-        const replyText = data.text;
+        const replyText = typeof data.text === 'string' ? data.text.trim() : '';
+        if (!replyText) throw new Error('Cloud AI returned an empty answer');
+        const provider = typeof data.provider === 'string' ? data.provider : 'unknown';
+        const model = typeof data.model === 'string' ? data.model : '';
         const botReply: ChatMessage = {
           id: `bot-${Date.now()}`,
           sender: 'mruneel',
           text: replyText,
           language,
           timestamp: Date.now(),
+          actionsTaken: [`AI Provider: ${provider}`, ...(model ? [`Model: ${model}`] : [])],
         };
 
         setMessages(prev => [...prev, botReply]);
