@@ -82,7 +82,7 @@ export async function createCodingAgentDraftPR(input: CodingAgentWriteInput, tok
       '',
       '### Files',
       ...committed.map(file => `- \`${file}\``),
-    ].join('\\n'),
+    ].join('\n'),
   });
   return { branch, pullRequestUrl: pr.html_url, pullRequestNumber: pr.number, filesCommitted: committed };
 }
