@@ -17,9 +17,11 @@ on:
       - feature/mruneel-approval-path-integrity-phase1
       - feature/mruneel-sandbox-stream-timeout-phase1
       - feature/mruneel-sandbox-event-protocol-guard-phase1
+      - feature/mruneel-sandbox-create-deadline-phase1
       - feature/mruneel-approval-path-integrity-phase1
       - feature/mruneel-sandbox-stream-timeout-phase1
       - feature/mruneel-sandbox-event-protocol-guard-phase1
+      - feature/mruneel-sandbox-create-deadline-phase1
       - feature/mruneel-sandbox-job-policy-phase1
       - feature/mruneel-render-sandbox-adapter-phase1
   pull_request:

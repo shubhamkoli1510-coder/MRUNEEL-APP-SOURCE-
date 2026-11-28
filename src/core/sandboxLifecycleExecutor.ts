@@ -82,10 +82,14 @@ export async function runApprovedSandboxPlan(
   let cleanup: SandboxLifecycleRunResult["cleanup"] = "not-needed";
 
   try {
-    const sandbox = await driver.create({
-      timeoutSeconds: plan.request.timeoutSeconds,
-      networkPolicy: { type: "deny-all" },
-    });
+    const sandbox = await withDeadline(
+      driver.create({
+        timeoutSeconds: plan.request.timeoutSeconds,
+        networkPolicy: { type: "deny-all" },
+      }),
+      policy.limits.startupTimeoutSeconds * 1000,
+      "Sandbox creation",
+    );
     if (!sandbox || typeof sandbox.id !== "string" || !sandbox.id.trim()) {
       throw new Error("Render did not return a usable Sandbox ID.");
     }
