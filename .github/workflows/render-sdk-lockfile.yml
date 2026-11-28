@@ -1,0 +1,36 @@
+name: Generate Render SDK lockfile
+
+on:
+  push:
+    branches:
+      - feature/mruneel-render-sandbox-sdk-phase1
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SDK integration branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/mruneel-render-sandbox-sdk-phase1
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve exact dependency lockfile
+        run: npm install --package-lock-only --ignore-scripts --legacy-peer-deps --no-audit --no-fund
+      - name: Commit lockfile when changed
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "Generate lockfile for Render SDK v1.9.0"
+            git push origin HEAD:feature/mruneel-render-sandbox-sdk-phase1
+          else
+            echo "package-lock.json is already current"
+          fi
