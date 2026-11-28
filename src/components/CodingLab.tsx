@@ -22,7 +22,7 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const fetchRepoFiles = async () => {
-    setError(''); setNotice(''); setResult(null); setApprovedSnapshot(null);
+    setError(''); setNotice(''); setResult(null); setApprovedSnapshot(null); setLoopState(initialCodingLoopState);
     const paths = filePaths.split('\n').map(p => p.trim()).filter(Boolean);
     if (paths.length < 1 || paths.length > 5) { setError('1 ते 5 file paths दे.'); return; }
     setLoading(true);
@@ -70,11 +70,11 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
 
   const copyPatch = async () => {
     if (!result?.unifiedDiff || !reviewApproved || !canCodingLoopExport(loopState)) { setNotice('Patch export करण्यापूर्वी proposal approve कर.'); return; }
-    try { await navigator.clipboard?.writeText(result.unifiedDiff); setLoopState(prev => transitionCodingLoop(prev, { type: 'export_completed' })); setNotice('Patch clipboard मध्ये copy झाला.'); }
+    try { if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable'); await navigator.clipboard.writeText(result.unifiedDiff); setLoopState(prev => transitionCodingLoop(prev, { type: 'export_completed' })); setNotice('Patch clipboard मध्ये copy झाला.'); }
     catch { setNotice('Copy करता आलं नाही. Download patch वापर.'); }
   };
   const downloadPatch = () => {
-    if (!result?.unifiedDiff || !reviewApproved) { setNotice('Patch export करण्यापूर्वी proposal approve कर.'); return; }
+    if (!result?.unifiedDiff || !reviewApproved || !canCodingLoopExport(loopState)) { setNotice('Patch export करण्यापूर्वी proposal approve कर.'); return; }
     const patch = new Blob([result.unifiedDiff], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(patch);
     const link = document.createElement('a'); link.href = url; link.download = 'mruneel-proposal.patch'; link.click();
