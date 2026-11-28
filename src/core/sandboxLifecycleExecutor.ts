@@ -105,7 +105,12 @@ export async function runApprovedSandboxPlan(
         " bash -lc " + shellQuote(command);
       const events = await driver.exec(sandboxId, boundedCommand);
       let sawExit = false;
-      for await (const event of events) {
+      const iterator = events[Symbol.asyncIterator]();
+      const streamDeadlineMs = (plan.request.timeoutSeconds + 2) * 1000;
+      while (true) {
+        const next = await withDeadline(iterator.next(), streamDeadlineMs, "Sandbox command event stream");
+        if (next.done) break;
+        const event = next.value;
         if (event.type === "output") {
           const bytes = new TextEncoder().encode(event.data).byteLength;
           const remaining = Math.max(0, policy.limits.maxOutputBytes - outputBytes);
