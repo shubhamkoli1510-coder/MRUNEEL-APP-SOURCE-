@@ -19,6 +19,7 @@ on:
       - feature/mruneel-coding-lab-multifile-review-phase1
       - feature/mruneel-autonomous-coding-loop-phase1
       - feature/mruneel-coding-loop-ui-integration-phase1
+      - feature/mruneel-proposal-diff-validator-phase1
   workflow_dispatch:
 
 jobs:
