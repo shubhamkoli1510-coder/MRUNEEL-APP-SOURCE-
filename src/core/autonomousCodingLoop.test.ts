@@ -26,7 +26,8 @@ test("bounded retries and revisions fail closed", () => {
  assert.equal(s.validationAttempts,MAX_VALIDATION_ATTEMPTS);
 });
 
-test("task input bounds and active task protection", () => assert.equal(transitionCodingLoop(initialCodingLoopState,{type:"start",task:" "}).stage,"blocked"));
+test("task input bounds and active task protection", () => {
+ assert.equal(transitionCodingLoop(initialCodingLoopState,{type:"start",task:" "}).stage,"blocked");
  const started=transitionCodingLoop(initialCodingLoopState,{type:"start",task:"task"});
  assert.equal(transitionCodingLoop(started,{type:"start",task:"second"}).stage,"blocked");
 });
