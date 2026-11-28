@@ -9,18 +9,18 @@ export interface ProposalDiffValidation {
 const MAX_DIFF_CHARS = 50_000;
 const normalize = (path: string) => path.split(String.fromCharCode(92)).join("/").trim();
 const safePath = (path: string) => {
-  const normalized = normalize(path).replace(/^(a|b)\\//, "");
+  const normalized = normalize(path).replace(/^(a|b)\//, "");
   return !!normalized && !normalized.startsWith("/") && !normalized.split("/").includes("..") &&
-    !/(^|\\/)\\.env(\\.|$)/i.test(normalized) &&
-    !/(secret|credential|keystore|\\.jks|\\.p12)/i.test(normalized) &&
+    !/(^|\/)\.env(\.|$)/i.test(normalized) &&
+    !/(secret|credential|keystore|\.jks|\.p12)/i.test(normalized) &&
     (normalized.startsWith("src/") || normalized.startsWith("android/app/src/") ||
       normalized === "package.json" || normalized === "server.ts");
 };
 
 function headerPath(line: string): string | null {
-  const raw = line.slice(4).trim().split("\\t")[0].trim();
+  const raw = line.slice(4).trim().split("\t")[0].trim();
   if (raw === "/dev/null") return null;
-  return raw.replace(/^(a|b)\\//, "");
+  return raw.replace(/^(a|b)\//, "");
 }
 
 /** Structural policy only; this does not compile or execute proposed code. */
@@ -38,7 +38,7 @@ export function validateCodingProposalDiff(
     if (!safePath(normalized)) errors.push("Unsafe changed-file path: " + p);
     if (!sourcePaths.has(normalized)) errors.push("Changed file was not among fetched sources: " + p);
   }
-  const headers = diff.split(/\\r?\\n/).filter(line => line.startsWith("+++ ") || line.startsWith("--- "));
+  const headers = diff.split(/\r?\n/).filter(line => line.startsWith("+++ ") || line.startsWith("--- "));
   const changedPaths = [...new Set(headers.map(headerPath).filter((p): p is string => p !== null))];
   if (headers.length < 2 || changedPaths.length === 0) errors.push("Unified diff file headers are missing.");
   for (const p of changedPaths) {
