@@ -123,52 +123,66 @@ export async function runApprovedSandboxPlan(
       const iterator = events[Symbol.asyncIterator]();
       const streamDeadlineMs = (plan.request.timeoutSeconds + 2) * 1000;
       const streamStartedAt = Date.now();
-      while (true) {
-        const remainingStreamMs = streamDeadlineMs - (Date.now() - streamStartedAt);
-        if (remainingStreamMs <= 0) {
-          throw new Error("Sandbox command event stream timed out.");
+      try {
+        while (true) {
+          const remainingStreamMs = streamDeadlineMs - (Date.now() - streamStartedAt);
+          if (remainingStreamMs <= 0) {
+            throw new Error("Sandbox command event stream timed out.");
+          }
+          const next = await withDeadline(iterator.next(), remainingStreamMs, "Sandbox command event stream");
+          if (next.done) break;
+          const event = next.value;
+          if (sawExit) {
+            throw new Error("Sandbox command emitted an event after its exit event.");
+          }
+          if (!event || typeof event !== "object") {
+            throw new Error("Sandbox command emitted an invalid event.");
+          }
+          if (event.type === "output") {
+            if ((event.stream !== "stdout" && event.stream !== "stderr") ||
+                typeof event.data !== "string") {
+              throw new Error("Sandbox command emitted malformed output.");
+            }
+            const bytes = new TextEncoder().encode(event.data).byteLength;
+            const remaining = Math.max(0, policy.limits.maxOutputBytes - outputBytes);
+            const accepted = Math.min(bytes, remaining);
+            if (accepted > 0) {
+              const clipped = new TextDecoder().decode(new TextEncoder().encode(event.data).slice(0, accepted));
+              if (event.stream === "stderr") stderr += clipped;
+              else stdout += clipped;
+              outputBytes += accepted;
+            }
+            if (accepted < bytes) {
+              outputTruncated = true;
+              throw new Error("Sandbox output exceeded the configured byte limit.");
+            }
+          } else if (event.type === "exit") {
+            if (!Number.isInteger(event.exit_code)) {
+              throw new Error("Sandbox command emitted an invalid exit code.");
+            }
+            sawExit = true;
+            exitCodes.push(event.exit_code);
+            if (event.exit_code !== 0) {
+              throw new Error("Sandbox command failed with exit code " + event.exit_code + ".");
+            }
+          } else {
+            throw new Error("Sandbox command emitted an unknown event type.");
+          }
         }
-        const next = await withDeadline(iterator.next(), remainingStreamMs, "Sandbox command event stream");
-        if (next.done) break;
-        const event = next.value;
-        if (sawExit) {
-          throw new Error("Sandbox command emitted an event after its exit event.");
-        }
-        if (!event || typeof event !== "object") {
-          throw new Error("Sandbox command emitted an invalid event.");
-        }
-        if (event.type === "output") {
-          if ((event.stream !== "stdout" && event.stream !== "stderr") ||
-              typeof event.data !== "string") {
-            throw new Error("Sandbox command emitted malformed output.");
+        if (!sawExit) throw new Error("Sandbox command ended without a verified exit event.");
+      } finally {
+        if (typeof iterator.return === "function") {
+          try {
+            await withDeadline(
+              Promise.resolve(iterator.return()),
+              1_000,
+              "Sandbox event iterator cleanup",
+            );
+          } catch {
+            // Iterator cleanup is best-effort; sandbox termination remains the final cleanup gate.
           }
-          const bytes = new TextEncoder().encode(event.data).byteLength;
-          const remaining = Math.max(0, policy.limits.maxOutputBytes - outputBytes);
-          const accepted = Math.min(bytes, remaining);
-          if (accepted > 0) {
-            const clipped = new TextDecoder().decode(new TextEncoder().encode(event.data).slice(0, accepted));
-            if (event.stream === "stderr") stderr += clipped;
-            else stdout += clipped;
-            outputBytes += accepted;
-          }
-          if (accepted < bytes) {
-            outputTruncated = true;
-            throw new Error("Sandbox output exceeded the configured byte limit.");
-          }
-        } else if (event.type === "exit") {
-          if (!Number.isInteger(event.exit_code)) {
-            throw new Error("Sandbox command emitted an invalid exit code.");
-          }
-          sawExit = true;
-          exitCodes.push(event.exit_code);
-          if (event.exit_code !== 0) {
-            throw new Error("Sandbox command failed with exit code " + event.exit_code + ".");
-          }
-        } else {
-          throw new Error("Sandbox command emitted an unknown event type.");
         }
       }
-      if (!sawExit) throw new Error("Sandbox command ended without a verified exit event.");
     }
   } catch (error) {
     primaryError = error;

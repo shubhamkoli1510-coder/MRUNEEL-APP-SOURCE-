@@ -235,6 +235,28 @@ test("rejects unknown sandbox event types", async () => {
   assert.ok(calls.includes("terminate"));
 });
 
+test("closes the sandbox event iterator after malformed events", async () => {
+  const { plan, policy } = approvedPlan();
+  const { driver, calls } = mockDriver({
+    exec: async () => ({
+      [Symbol.asyncIterator]() {
+        return {
+          next: async () => ({ done: false, value: { type: "invalid" } as any }),
+          return: async () => {
+            calls.push("iterator-return");
+            return { done: true, value: undefined };
+          },
+        };
+      },
+    }),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /unknown event type/i);
+  assert.ok(calls.includes("iterator-return"));
+  assert.equal(result.cleanup, "terminated");
+});
+
 
 test("bounds a stalled upload and still terminates sandbox", async () => {
   const { plan, policy: originalPolicy } = approvedPlan();
