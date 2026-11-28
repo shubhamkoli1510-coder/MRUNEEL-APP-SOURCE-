@@ -24,6 +24,7 @@ import { speechService } from './utils/speechService';
 import { deviceBridge } from './utils/deviceBridge';
 import { parseOfflineCommand } from './utils/offlineEngine';
 import { ConversationalContext } from './utils/marathiConversationalEngine';
+import { routeRequest } from './core/brainRouter';
 
 // Components
 import { TelemetryBar } from './components/TelemetryBar';
@@ -185,6 +186,9 @@ export default function App() {
   const handleUserQuery = async (queryText: string, visionSnapshot?: string) => {
     if (!queryText.trim()) return;
 
+    // Brain Router: classify and gate high-risk external actions before AI processing.
+    const brainRoute = routeRequest(queryText);
+
     // Add user message to conversation log
     const userMsg: ChatMessage = {
       id: `usr-${Date.now()}`,
@@ -196,6 +200,25 @@ export default function App() {
     setMessages(prev => [...prev, userMsg]);
     setAssistantState('thinking');
     setInterimVoiceText('');
+
+    // Never let high-risk requests be treated as completed actions by the chat model.
+    if (brainRoute.disposition === 'approval_required' && brainRoute.decision.risk === 'high') {
+      const gateText = language === 'mr-IN'
+        ? 'ही कृती संवेदनशील आहे. मी कोणताही मेसेज पाठवला, कॉल केला, पैसे हलवले किंवा डेटा शेअर केला नाही. पुढे जाण्यापूर्वी स्पष्ट मंजुरी आवश्यक आहे. हवं असल्यास मी आधी मजकूर/योजना तयार करून देऊ शकतो.'
+        : 'This is a sensitive action. I have not sent anything, called anyone, transferred money, or shared data. Explicit approval is required before proceeding. I can help prepare a draft or plan first.';
+      const gateReply: ChatMessage = {
+        id: `bot-${Date.now()}`,
+        sender: 'mruneel',
+        text: gateText,
+        language,
+        timestamp: Date.now(),
+        actionsTaken: ['Brain Router: approval gate', 'No external action performed'],
+      };
+      setMessages(prev => [...prev, gateReply]);
+      setAssistantState('speaking');
+      speechService.speak(gateText, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      return;
+    }
 
     // Dual-Core Strategy: Check if Offline or Online
     const isOnline = navigator.onLine && !settings.offlineFirstMode;
