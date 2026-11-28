@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createCodingAgentDraftPR } from './src/core/codingAgentGitHub';
+import { getRenderSandboxReadiness } from './src/core/renderSandboxAdapter';
 
 dotenv.config();
 
@@ -58,6 +59,17 @@ app.get('/api/health', (_req: Request, res: Response) => {
     apiKeyConfigured: !!process.env.GEMINI_API_KEY,
     geminiConfigured: !!process.env.GEMINI_API_KEY,
     openaiConfigured: !!process.env.OPENAI_API_KEY,
+  });
+});
+
+// Sandbox integration readiness only. This endpoint never creates or runs a Sandbox.
+app.get('/api/sandbox/readiness', (_req: Request, res: Response) => {
+  const readiness = getRenderSandboxReadiness();
+  res.json({
+    configured: readiness.configured,
+    missing: readiness.missing,
+    executionEnabled: false,
+    message: 'Readiness check only; no Sandbox is created or executed.',
   });
 });
 
