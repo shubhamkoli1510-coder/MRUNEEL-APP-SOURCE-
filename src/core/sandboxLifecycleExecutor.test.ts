@@ -327,7 +327,7 @@ test("enforces cumulative command event-stream deadline despite periodic events"
 
 test("enforces a cumulative deadline across multiple commands", async () => {
   const input = {
-    commands: ["first-command", "second-command"],
+    commands: ["npm run test:sandbox-policy", "npm run test:sandbox-lifecycle-policy"],
     files: [{ path: "src/core/example.ts", content: "ok" }],
     timeoutSeconds: 1,
     networkPolicy: "deny-all" as const,
