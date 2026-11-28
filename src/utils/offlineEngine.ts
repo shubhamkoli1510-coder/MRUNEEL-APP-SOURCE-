@@ -300,7 +300,7 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'ADD_NOTE',
-        spokenResponse: `मी तुमची टीप स्थानिक मेमरीमध्ये सुरक्षित केली आहे: "${content}"`,
+        spokenResponse: `टीप MRUNEEL अॅपच्या स्थानिक यादीत सेव्ह केली: "${content}"`,
         payload: { content, title: 'मृणील टीप' },
         actionTaken: `टीप जतन केली: ${content}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'note' }
@@ -308,7 +308,7 @@ export function parseOfflineCommand(
     } else if (lang === 'hi-IN') {
       return {
         type: 'ADD_NOTE',
-        spokenResponse: `मैंने आपकी नोट सुरक्षित कर ली है: "${content}"`,
+        spokenResponse: `नोट MRUNEEL ऐप की स्थानीय सूची में सेव की: "${content}"`,
         payload: { content, title: 'मृणील नोट' },
         actionTaken: `नोट सुरक्षित की`,
         newContext: { ...context?.conversationalContext, lastTopic: 'note' }
@@ -316,7 +316,7 @@ export function parseOfflineCommand(
     } else {
       return {
         type: 'ADD_NOTE',
-        spokenResponse: `I have recorded your note in local secure memory: "${content}"`,
+        spokenResponse: `Saved this note in the local MRUNEEL app list: "${content}"`,
         payload: { content, title: 'MRUNEEL Note' },
         actionTaken: `Note saved: ${content}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'note' }
@@ -400,13 +400,13 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'LOCK_SYSTEM',
-        spokenResponse: `सिस्टीम बायोमेट्रिक सुरक्षा लॉक सक्रिय करण्यात आली आहे, ${honorific}.`,
+        spokenResponse: `MRUNEEL अॅप लॉक सुरू करत आहे; Android फोनचा system lock सक्रिय केलेला नाही.`,
         actionTaken: 'सिस्टीम लॉक'
       };
     } else {
       return {
         type: 'LOCK_SYSTEM',
-        spokenResponse: 'Biometric and PIN security protocols engaged. System locked, Sir.',
+        spokenResponse: 'MRUNEEL app lock engaged. Android system lock was not triggered.',
         actionTaken: 'System Locked'
       };
     }
@@ -506,19 +506,19 @@ export function parseOfflineCommand(
   if (lang === 'mr-IN') {
     return {
       type: 'UNKNOWN',
-      spokenResponse: `${honorific}, मी आपले म्हणणे ("${text}") ऐकले. सध्या डिव्हाइस ऑफलाइन असल्याने या विषयावर सखोल माहिती देण्यासाठी क्लाउड नेटवर्क उपलब्ध नाही. मी खोटे उत्तर देणार नाही; तरीही आपले गजर, बॅटरी, स्मरणपत्रे किंवा नोट्स यासारखे सर्व स्थानिक प्रोटोकॉल पूर्णपणे सक्रिय आहेत.`,
+      spokenResponse: `${honorific}, मी आपले म्हणणे ("${text}") ऐकले. क्लाउड नेटवर्क उपलब्ध नाही आणि या विनंतीसाठी समर्थित स्थानिक कृती सापडली नाही. मी अंदाज किंवा खोटी action success सांगणार नाही.`,
       newContext: { ...context?.conversationalContext, lastTopic: 'general', lastQuery: text }
     };
   } else if (lang === 'hi-IN') {
     return {
       type: 'UNKNOWN',
-      spokenResponse: `${honorific}, मैंने आपका संदेश ("${text}") सुना। वर्तमान में ऑफलाइन होने के कारण इस विषय पर विस्तृत उत्तर सीमित है, लेकिन आपके सभी डिवाइस कमांड्स सक्रिय हैं।`,
+      spokenResponse: `${honorific}, आपका संदेश सुना। नेटवर्क उपलब्ध नहीं है और इस अनुरोध के लिए समर्थित स्थानीय कार्रवाई नहीं मिली; मैं कोई सफलता का दावा नहीं करूँगा।`,
       newContext: { ...context?.conversationalContext, lastTopic: 'general', lastQuery: text }
     };
   } else {
     return {
       type: 'UNKNOWN',
-      spokenResponse: `Understood, Sir. While operating in autonomous offline mode, cloud database access for "${text}" is restricted. Device hardware controls, alarms, and personal notes remain fully operational.`,
+      spokenResponse: `I heard: "${text}". Cloud access is unavailable and no supported local action matched this request, so I will not claim it completed.`,
       newContext: { ...context?.conversationalContext, lastTopic: 'general', lastQuery: text }
     };
   }
