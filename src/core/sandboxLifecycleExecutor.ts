@@ -144,6 +144,8 @@ export async function runApprovedSandboxPlan(
           if (event.exit_code !== 0) {
             throw new Error("Sandbox command failed with exit code " + event.exit_code + ".");
           }
+        } else {
+          throw new Error("Sandbox command emitted an unknown event type.");
         }
       }
       if (!sawExit) throw new Error("Sandbox command ended without a verified exit event.");
