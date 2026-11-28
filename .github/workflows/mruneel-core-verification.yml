@@ -14,19 +14,12 @@ on:
       - feature/mruneel-diff-orphan-header-guard-phase1
       - feature/mruneel-diff-malformed-hunk-guard-phase1
       - feature/mruneel-canonical-diff-path-guard-phase1
-      - feature/mruneel-approval-path-integrity-phase1
-      - feature/mruneel-sandbox-stream-timeout-phase1
-      - feature/mruneel-sandbox-event-protocol-guard-phase1
-      - feature/mruneel-sandbox-create-deadline-phase1
       - feature/mruneel-sandbox-total-command-deadline-phase1
-      - feature/mruneel-approval-path-integrity-phase1
-      - feature/mruneel-sandbox-stream-timeout-phase1
-      - feature/mruneel-sandbox-event-protocol-guard-phase1
-      - feature/mruneel-sandbox-create-deadline-phase1
       - feature/mruneel-sandbox-job-policy-phase1
       - feature/mruneel-render-sandbox-adapter-phase1
   pull_request:
     branches:
+      - feature/mruneel-sandbox-total-command-deadline-phase1
       - feature/mruneel-safe-launchers-phase1
       - feature/mruneel-jarvis-parity-foundation-phase1
       - feature/mruneel-coding-agent-approval-gate-phase1
