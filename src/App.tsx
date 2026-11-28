@@ -221,6 +221,45 @@ export default function App() {
       return;
     }
 
+    // Safe native device intents run locally even when the cloud is online.
+    // The parser only recognizes an allowlisted target or a one-step volume adjustment.
+    const deviceIntent = parseOfflineCommand(queryText, language, { honorific: settings.honorific });
+    if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'ADJUST_VOLUME') {
+      let actionText = deviceIntent.spokenResponse;
+      const performed: string[] = [];
+      try {
+        if (Capacitor.getPlatform() !== 'android') {
+          throw new Error('Native Android controls are only available on Android');
+        }
+        if (deviceIntent.type === 'OPEN_SCREEN') {
+          const target = deviceIntent.payload?.target as 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer';
+          await androidDeviceActions.openScreen(target);
+          performed.push(`Opened Android screen: ${target}`);
+          if (target === 'camera') setShowCamera(true);
+        } else {
+          const direction = deviceIntent.payload?.direction as -1 | 1;
+          const result = direction > 0 ? await androidDeviceActions.volumeUp() : await androidDeviceActions.volumeDown();
+          performed.push(`Media volume: ${result.volume}/${result.max}`);
+          actionText = language === 'mr-IN'
+            ? `आवाज ${result.volume} पैकी ${result.max} स्तरावर आहे.`
+            : `Media volume is now ${result.volume} of ${result.max}.`;
+        }
+      } catch (error) {
+        actionText = language === 'mr-IN'
+          ? 'ही डिव्हाइस कृती पूर्ण झाली नाही. फोनची परवानगी किंवा उपलब्धता तपास.'
+          : 'That device action could not be completed. Check Android availability and permissions.';
+        performed.push('Device action failed; not reported as completed');
+      }
+      const deviceReply: ChatMessage = {
+        id: `bot-${Date.now()}`, sender: 'mruneel', text: actionText, language, timestamp: Date.now(),
+        isOfflineResponse: !navigator.onLine, actionsTaken: performed.length ? performed : undefined,
+      };
+      setMessages(prev => [...prev, deviceReply]);
+      setAssistantState('speaking');
+      speechService.speak(actionText, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      return;
+    }
+
     // Dual-Core Strategy: Check if Offline or Online
     const isOnline = navigator.onLine && !settings.offlineFirstMode;
 
