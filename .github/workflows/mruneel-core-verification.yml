@@ -20,6 +20,7 @@ on:
       - feature/mruneel-sandbox-create-deadline-phase1
       - feature/mruneel-sandbox-total-command-deadline-phase1
       - feature/mruneel-sandbox-iterator-cleanup-phase1
+      - feature/mruneel-sandbox-iterator-cleanup-timeout-test-phase1
       - feature/mruneel-approval-path-integrity-phase1
       - feature/mruneel-sandbox-stream-timeout-phase1
       - feature/mruneel-sandbox-event-protocol-guard-phase1
