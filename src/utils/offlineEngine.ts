@@ -129,15 +129,15 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'SET_ALARM',
-        spokenResponse: `नक्कीच ${honorific}, मी ${time} वाजताचा अलार्म सक्रिय केला आहे. वेळेवर मी आपल्याला सावध करेन.`,
+        spokenResponse: `अलार्मची ${time} वाजताची वेळ अॅपमध्ये नोंदवली. पण फोनचा प्रत्यक्ष system alarm अजून सेट झालेला नाही.`,
         payload: { time, label: 'MRUNEEL अलार्म' },
-        actionTaken: `अलार्म सेट: ${time}`,
+        actionTaken: `अॅपमध्ये अलार्म नोंद: ${time} (system alarm नाही)`,
         newContext: { ...context?.conversationalContext, lastTopic: 'alarm' }
       };
     } else if (lang === 'hi-IN') {
       return {
         type: 'SET_ALARM',
-        spokenResponse: `जी ${honorific}, मैंने ${time} बजे का अलार्म सक्रिय कर दिया है।`,
+        spokenResponse: `अलार्म की ${time} बजे वाली समय-सूचना ऐप में दर्ज है; फोन का system alarm अभी सेट नहीं हुआ है।`,
         payload: { time, label: 'MRUNEEL अलार्म' },
         actionTaken: `अलार्म सेट: ${time}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'alarm' }
@@ -145,9 +145,9 @@ export function parseOfflineCommand(
     } else {
       return {
         type: 'SET_ALARM',
-        spokenResponse: `Confirmed, Sir. I have configured your alarm for ${time}.`,
+        spokenResponse: `The ${time} alarm time is saved in the app list; the Android system alarm has not been scheduled.`,
         payload: { time, label: 'MRUNEEL Alarm' },
-        actionTaken: `Alarm set: ${time}`,
+        actionTaken: `App alarm entry saved: ${time} (not an OS alarm)`,
         newContext: { ...context?.conversationalContext, lastTopic: 'alarm' }
       };
     }
@@ -163,31 +163,31 @@ export function parseOfflineCommand(
   ) {
     const levelPercent = context?.batteryLevel !== null && context?.batteryLevel !== undefined
       ? Math.round(context.batteryLevel * 100)
-      : 84;
-    const isCharging = context?.isCharging ? 'चार्जिंग सुरू आहे' : 'बॅटरीवर कार्यरत आहे';
+      : null;
+    const chargingText = context?.isCharging === true ? 'चार्जिंग सुरू आहे' : context?.isCharging === false ? 'चार्जिंग सुरू नाही' : 'चार्जिंग स्थिती उपलब्ध नाही';
 
     if (lang === 'mr-IN') {
       return {
         type: 'CHECK_BATTERY',
-        spokenResponse: `${honorific}, सध्या तुमच्या फोनची बॅटरी ${levelPercent}% आहे आणि डिव्हाइस ${isCharging}. सर्व अंतर्गत सिस्टीम सामान्य आहेत.`,
+        spokenResponse: levelPercent !== null ? `${honorific}, सध्या तुमच्या फोनची बॅटरी ${levelPercent}% आहे आणि डिव्हाइस ${chargingText}.` : `${honorific}, सध्या बॅटरीची अचूक माहिती उपलब्ध नाही. डिव्हाइस status तपासल्याशिवाय मी अंदाज सांगणार नाही.`,
         payload: { batteryLevel: levelPercent },
-        actionTaken: `बॅटरी स्थिती तपासली: ${levelPercent}%`,
+        actionTaken: levelPercent !== null ? `बॅटरी स्थिती: ${levelPercent}%` : 'बॅटरी माहिती उपलब्ध नाही',
         newContext: { ...context?.conversationalContext, lastTopic: 'battery' }
       };
     } else if (lang === 'hi-IN') {
       return {
         type: 'CHECK_BATTERY',
-        spokenResponse: `${honorific}, फोन की बैटरी ${levelPercent}% है। सभी सिस्टम सामान्य रूप से चल रहे हैं।`,
+        spokenResponse: levelPercent !== null ? `${honorific}, फोन की बैटरी ${levelPercent}% है।` : `${honorific}, बैटरी की वास्तविक जानकारी उपलब्ध नहीं है; अनुमान नहीं बताऊँगा।`,
         payload: { batteryLevel: levelPercent },
-        actionTaken: `बैटरी स्टेटस: ${levelPercent}%`,
+        actionTaken: levelPercent !== null ? `बैटरी स्टेटस: ${levelPercent}%` : 'Battery status unavailable',
         newContext: { ...context?.conversationalContext, lastTopic: 'battery' }
       };
     } else {
       return {
         type: 'CHECK_BATTERY',
-        spokenResponse: `Sir, current device battery level is at ${levelPercent}%. Power management systems are operating within optimal parameters.`,
+        spokenResponse: levelPercent !== null ? `Current device battery is ${levelPercent}%. ${context?.isCharging === true ? 'Charging.' : context?.isCharging === false ? 'Not charging.' : 'Charging state unavailable.'}` : `Current battery data is unavailable; I will not guess the percentage.`,
         payload: { batteryLevel: levelPercent },
-        actionTaken: `Battery checked: ${levelPercent}%`,
+        actionTaken: levelPercent !== null ? `Battery status: ${levelPercent}%` : 'Battery data unavailable',
         newContext: { ...context?.conversationalContext, lastTopic: 'battery' }
       };
     }
@@ -313,15 +313,15 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'SET_REMINDER',
-        spokenResponse: `मी स्मरणपत्र नोंदवले आहे: "${reminderText}". योग्य वेळी मी आपल्याला सूचित करेन.`,
+        spokenResponse: `स्मरणपत्र अॅपमध्ये नोंदवले: "${reminderText}". प्रत्यक्ष notification schedule अजून जोडलेला नाही.`,
         payload: { title: reminderText },
-        actionTaken: `रिमाइंडर सेट: ${reminderText}`,
+        actionTaken: `अॅपमध्ये स्मरणपत्र नोंद (notification नाही): ${reminderText}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'reminder' }
       };
     } else if (lang === 'hi-IN') {
       return {
         type: 'SET_REMINDER',
-        spokenResponse: `रिमाइंडर जोड़ दिया गया है: "${reminderText}".`,
+        spokenResponse: `रिमाइंडर ऐप में दर्ज किया: "${reminderText}". Notification schedule अभी उपलब्ध नहीं है.`,
         payload: { title: reminderText },
         actionTaken: `रिमाइंडर सेट: ${reminderText}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'reminder' }
@@ -329,9 +329,9 @@ export function parseOfflineCommand(
     } else {
       return {
         type: 'SET_REMINDER',
-        spokenResponse: `Reminder registered: "${reminderText}". I will notify you at the appropriate time, Sir.`,
+        spokenResponse: `Reminder saved in the app list: "${reminderText}". A system notification has not been scheduled yet.`,
         payload: { title: reminderText },
-        actionTaken: `Reminder set: ${reminderText}`,
+        actionTaken: `App reminder saved (no notification scheduled): ${reminderText}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'reminder' }
       };
     }
