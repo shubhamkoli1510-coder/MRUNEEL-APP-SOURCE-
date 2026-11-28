@@ -42,3 +42,4 @@ test("enabled conversation route returns answer handoff rather than adapter unav
 });
 
 test("research intent returns grounded research handoff mode",()=>{const result=runAgentTurn({text:"search for latest AI news"});assert.equal(result.mode,"research");assert.equal(result.route.available,true);assert.equal(result.executionStarted,false);});
+test("coding request reaches approval-gated Coding Lab adapter",()=>{const result=runAgentTurn({text:"fix this bug in App.tsx"});assert.equal(result.mode,"approval_required");assert.equal(result.route.selectedToolId,"coding_lab");assert.equal(result.route.available,true);assert.equal(result.executionStarted,false);});
