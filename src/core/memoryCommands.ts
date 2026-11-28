@@ -1,7 +1,7 @@
 import { MemoryStore, type MemoryStorageAdapter } from "./memoryStore";
 
 export type MemoryCommandResult = { handled: false } | { handled: true; response: string; action: "saved" | "listed" | "cleared" | "blocked" | "empty" };
-const SENSITIVE_HINTS = /\b(password|passcode|pin|otp|token|api key|secret|bank account|card number|medical|diagnosis|medicine|health|salary|income)\b|पासवर्ड|पिन|ओटीपी|आरोग्य|औषध|बँक|पगार/i;
+const SENSITIVE_HINTS = /\b(password|passcode|pin|otp|token|api key|secret|bank account|card number|credit card|debit card|passport|aadhaar|identity|address|exact location|political|religion|sexual|caste|race|medical|diagnosis|medicine|health|salary|income|financial)\b|पासवर्ड|पिन|ओटीपी|आरोग्य|औषध|बँक|पगार|आधार|पत्ता|धर्म|जात|राजकीय|वैद्यकीय/i;
 
 /** Create a browser-backed memory store only when local storage exists; never sync to cloud. */
 export function createMemoryCommandStore(adapter?: MemoryStorageAdapter): MemoryStore | null {
