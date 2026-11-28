@@ -53,7 +53,7 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
       for (let attempt = 0; attempt < 3; attempt++) {
         const response = await fetch(`${API_BASE_URL}/api/coding/plan`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(60000), body: JSON.stringify({ task: feedback ? `${task}\\n\\nPrevious proposal validation feedback: ${feedback}\\nReturn a corrected proposal with a non-empty unified diff.` : task, files }),
+          signal: AbortSignal.timeout(60000), body: JSON.stringify({ task: feedback ? `${task}\n\nPrevious proposal validation feedback: ${feedback}\nReturn a corrected proposal with a non-empty unified diff.` : task, files }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Coding Lab request failed');
@@ -61,8 +61,9 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
         if (attempt === 0) setLoopState(prev => transitionCodingLoop(prev, { type: 'plan_ready' }));
         setLoopState(prev => transitionCodingLoop(prev, { type: 'proposal_ready' }));
         const proposal = data.proposal as CodingProposal;
-        // Structural-only validation: non-empty diff required. No tests/commands run here.
-        if (typeof proposal.unifiedDiff === 'string' && proposal.unifiedDiff.trim()) {
+        // Structural policy validation only; no tests or commands run.
+        const validation = validateCodingProposalDiff(proposal, files);
+        if (validation.ok) {
           setLoopState(prev => transitionCodingLoop(prev, { type: 'validation_passed' }));
           accepted = proposal;
           break;
