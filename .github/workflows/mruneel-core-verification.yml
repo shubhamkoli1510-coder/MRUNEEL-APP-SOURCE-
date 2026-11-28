@@ -10,6 +10,7 @@ on:
       - feature/mruneel-autonomous-coding-loop-phase1
       - feature/mruneel-coding-loop-ui-integration-phase1
       - feature/mruneel-proposal-diff-validator-phase1
+      - feature/mruneel-diff-header-integrity-phase1
   pull_request:
     branches:
       - feature/mruneel-safe-launchers-phase1
