@@ -297,6 +297,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   मृणील या स्मृती वापरून तुम्हाला वैयक्तिकृत उत्तरे देतो. ही माहिती थेट तुमच्या फोनमध्ये सुरक्षित साठवली जाते.
                 </p>
               </div>
+              <div className="p-3 rounded-xl border border-amber-500/30 bg-black/70 text-xs text-amber-200 flex items-center justify-between gap-3">
+                <div>
+                  <strong className="text-amber-300">Cloud AI ला स्मृती पाठवण्याची परवानगी</strong>
+                  <p className="mt-1 text-[11px] text-amber-400/70">OFF असेल तर तुमच्या वैयक्तिक memory entries server ला पाठवल्या जाणार नाहीत. Default OFF.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.cloudMemoryConsent}
+                  onChange={e => handleSettingChange('cloudMemoryConsent', e.target.checked)}
+                  aria-label="Allow personal memories to be sent to cloud AI"
+                  className="w-5 h-5 accent-amber-500 cursor-pointer shrink-0"
+                />
+              </div>
 
               {/* Add Memory Form */}
               <form onSubmit={handleAddMemory} className="p-3 rounded-xl hud-panel space-y-2">
