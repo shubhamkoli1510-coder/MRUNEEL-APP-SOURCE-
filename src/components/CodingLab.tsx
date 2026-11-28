@@ -53,7 +53,7 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
     const url = URL.createObjectURL(patch);
     const link = document.createElement('a');
     link.href = url; link.download = 'mruneel-proposal.patch'; link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     setNotice('Patch download सुरू झाला. Apply करण्यापूर्वी review आणि tests आवश्यक आहेत.');
   };
 
