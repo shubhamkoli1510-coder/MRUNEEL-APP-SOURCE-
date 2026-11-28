@@ -401,13 +401,13 @@ export function parseOfflineCommand(
       return {
         type: 'LOCK_SYSTEM',
         spokenResponse: `MRUNEEL अॅप लॉक सुरू करत आहे; Android फोनचा system lock सक्रिय केलेला नाही.`,
-        actionTaken: 'सिस्टीम लॉक'
+        actionTaken: 'MRUNEEL अॅप लॉक'
       };
     } else {
       return {
         type: 'LOCK_SYSTEM',
         spokenResponse: 'MRUNEEL app lock engaged. Android system lock was not triggered.',
-        actionTaken: 'System Locked'
+        actionTaken: 'MRUNEEL app locked'
       };
     }
   }
@@ -426,7 +426,7 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'GENERAL_RESPONSE',
-        spokenResponse: `नमस्कार! मी मृणील (MRUNEEL), तुमचा प्रगत वैयक्तिक एआय सहाय्यक. जार्व्हिसच्या संकल्पनेवर आधारित, मी मराठी, हिंदी आणि इंग्रजीत बोलू शकतो आणि ऑफलाइनही तुमची कामे सांभाळू शकतो.`,
+        spokenResponse: `नमस्कार! मी मृणील (MRUNEEL), तुमचा प्रगत वैयक्तिक एआय सहाय्यक. जार्व्हिसच्या संकल्पनेवर आधारित, मी मराठी, हिंदी आणि इंग्रजीत बोलू शकतो; इंटरनेट नसतानाही समर्थित स्थानिक कामे करू शकतो.`,
         newContext: { ...context?.conversationalContext, lastTopic: 'greeting' }
       };
     } else if (lang === 'hi-IN') {
