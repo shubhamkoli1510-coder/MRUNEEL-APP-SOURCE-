@@ -15,6 +15,7 @@ export interface OfflineAction {
     | 'TOGGLE_TORCH'
     | 'ADJUST_VOLUME'
     | 'OPEN_SCREEN'
+    | 'OPEN_APP'
     | 'ADD_NOTE'
     | 'SET_REMINDER'
     | 'OPEN_CAMERA'
@@ -125,29 +126,32 @@ export function parseOfflineCommand(
     clean.includes('जागे करा') ||
     clean.includes('वेळ लावा')
   ) {
-    const time = extractTimeFromText(clean) || '07:00';
+    const time = extractTimeFromText(clean);
+    if (!time) {
+      return { type: 'SET_ALARM', spokenResponse: lang === 'mr-IN' ? 'अलार्म किती वाजता लावायचा? वेळ सांग.' : lang === 'hi-IN' ? 'अलार्म किस समय लगाना है? समय बताइए।' : 'What time should I set the alarm for?', payload: {}, newContext: { ...context?.conversationalContext, lastTopic: 'alarm' } };
+    }
     if (lang === 'mr-IN') {
       return {
         type: 'SET_ALARM',
-        spokenResponse: `नक्कीच ${honorific}, मी ${time} वाजताचा अलार्म सक्रिय केला आहे. वेळेवर मी आपल्याला सावध करेन.`,
+        spokenResponse: `अलार्मची ${time} वाजताची वेळ अॅपमध्ये नोंदवली. पण फोनचा प्रत्यक्ष system alarm अजून सेट झालेला नाही.`,
         payload: { time, label: 'MRUNEEL अलार्म' },
-        actionTaken: `अलार्म सेट: ${time}`,
+        actionTaken: `अॅपमध्ये अलार्म नोंद: ${time} (system alarm नाही)`,
         newContext: { ...context?.conversationalContext, lastTopic: 'alarm' }
       };
     } else if (lang === 'hi-IN') {
       return {
         type: 'SET_ALARM',
-        spokenResponse: `जी ${honorific}, मैंने ${time} बजे का अलार्म सक्रिय कर दिया है।`,
+        spokenResponse: `अलार्म की ${time} बजे वाली समय-सूचना ऐप में दर्ज है; फोन का system alarm अभी सेट नहीं हुआ है।`,
         payload: { time, label: 'MRUNEEL अलार्म' },
-        actionTaken: `अलार्म सेट: ${time}`,
+        actionTaken: `ऐपमध्ये अलार्म नोंद: ${time} (system alarm नाही)`,
         newContext: { ...context?.conversationalContext, lastTopic: 'alarm' }
       };
     } else {
       return {
         type: 'SET_ALARM',
-        spokenResponse: `Confirmed, Sir. I have configured your alarm for ${time}.`,
+        spokenResponse: `The ${time} alarm time is saved in the app list; the Android system alarm has not been scheduled.`,
         payload: { time, label: 'MRUNEEL Alarm' },
-        actionTaken: `Alarm set: ${time}`,
+        actionTaken: `App alarm entry saved: ${time} (not an OS alarm)`,
         newContext: { ...context?.conversationalContext, lastTopic: 'alarm' }
       };
     }
@@ -163,34 +167,57 @@ export function parseOfflineCommand(
   ) {
     const levelPercent = context?.batteryLevel !== null && context?.batteryLevel !== undefined
       ? Math.round(context.batteryLevel * 100)
-      : 84;
-    const isCharging = context?.isCharging ? 'चार्जिंग सुरू आहे' : 'बॅटरीवर कार्यरत आहे';
+      : null;
+    const chargingText = context?.isCharging === true ? 'चार्जिंग सुरू आहे' : context?.isCharging === false ? 'चार्जिंग सुरू नाही' : 'चार्जिंग स्थिती उपलब्ध नाही';
 
     if (lang === 'mr-IN') {
       return {
         type: 'CHECK_BATTERY',
-        spokenResponse: `${honorific}, सध्या तुमच्या फोनची बॅटरी ${levelPercent}% आहे आणि डिव्हाइस ${isCharging}. सर्व अंतर्गत सिस्टीम सामान्य आहेत.`,
+        spokenResponse: levelPercent !== null ? `${honorific}, सध्या तुमच्या फोनची बॅटरी ${levelPercent}% आहे आणि डिव्हाइस ${chargingText}.` : `${honorific}, सध्या बॅटरीची अचूक माहिती उपलब्ध नाही. डिव्हाइस status तपासल्याशिवाय मी अंदाज सांगणार नाही.`,
         payload: { batteryLevel: levelPercent },
-        actionTaken: `बॅटरी स्थिती तपासली: ${levelPercent}%`,
+        actionTaken: levelPercent !== null ? `बॅटरी स्थिती: ${levelPercent}%` : 'बॅटरी माहिती उपलब्ध नाही',
         newContext: { ...context?.conversationalContext, lastTopic: 'battery' }
       };
     } else if (lang === 'hi-IN') {
       return {
         type: 'CHECK_BATTERY',
-        spokenResponse: `${honorific}, फोन की बैटरी ${levelPercent}% है। सभी सिस्टम सामान्य रूप से चल रहे हैं।`,
+        spokenResponse: levelPercent !== null ? `${honorific}, फोन की बैटरी ${levelPercent}% है।` : `${honorific}, बैटरी की वास्तविक जानकारी उपलब्ध नहीं है; अनुमान नहीं बताऊँगा।`,
         payload: { batteryLevel: levelPercent },
-        actionTaken: `बैटरी स्टेटस: ${levelPercent}%`,
+        actionTaken: levelPercent !== null ? `बैटरी स्टेटस: ${levelPercent}%` : 'Battery status unavailable',
         newContext: { ...context?.conversationalContext, lastTopic: 'battery' }
       };
     } else {
       return {
         type: 'CHECK_BATTERY',
-        spokenResponse: `Sir, current device battery level is at ${levelPercent}%. Power management systems are operating within optimal parameters.`,
+        spokenResponse: levelPercent !== null ? `Current device battery is ${levelPercent}%. ${context?.isCharging === true ? 'Charging.' : context?.isCharging === false ? 'Not charging.' : 'Charging state unavailable.'}` : `Current battery data is unavailable; I will not guess the percentage.`,
         payload: { batteryLevel: levelPercent },
-        actionTaken: `Battery checked: ${levelPercent}%`,
+        actionTaken: levelPercent !== null ? `Battery status: ${levelPercent}%` : 'Battery data unavailable',
         newContext: { ...context?.conversationalContext, lastTopic: 'battery' }
       };
     }
+  }
+
+  // 3. USER-REQUESTED APP LAUNCH: fixed native allowlist only
+  const appAliases: Array<[RegExp, string, string]> = [
+    [/whatsapp|व्हॉट्स.?अॅप|व्हाट्स.?एप/i, 'whatsapp', 'WhatsApp'],
+    [/youtube|यूट्यूब/i, 'youtube', 'YouTube'],
+    [/chrome|क्रोम/i, 'chrome', 'Chrome'],
+    [/google maps|maps|नकाशे|गूगल मॅप/i, 'maps', 'Maps'],
+    [/calculator|कॅल्क्युलेटर|गणक/i, 'calculator', 'Calculator'],
+    [/phone app|फोन अॅप|फोन app/i, 'phone', 'Phone'],
+    [/camera app|कॅमेरा अॅप/i, 'camera', 'Camera'],
+    [/android settings|settings app|सेटिंग्ज अॅप/i, 'settings', 'Settings'],
+  ];
+  const appMatch = appAliases.find(([pattern]) => pattern.test(clean));
+  if (appMatch && /(open|launch|उघड|चालू कर|खोल)/i.test(clean)) {
+    const appId = appMatch[1];
+    const label = appMatch[2];
+    return {
+      type: 'OPEN_APP',
+      payload: { appId },
+      spokenResponse: lang === 'mr-IN' ? label + ' अॅप उघडण्याची विनंती करतो.' : 'Requesting ' + label + ' to open.',
+      actionTaken: label + ' launch requested',
+    };
   }
 
   // 3. SAFE DEVICE BRIDGE COMMANDS (screen launches + bounded volume)
@@ -273,7 +300,7 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'ADD_NOTE',
-        spokenResponse: `मी तुमची टीप स्थानिक मेमरीमध्ये सुरक्षित केली आहे: "${content}"`,
+        spokenResponse: `टीप MRUNEEL अॅपच्या स्थानिक यादीत सेव्ह केली: "${content}"`,
         payload: { content, title: 'मृणील टीप' },
         actionTaken: `टीप जतन केली: ${content}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'note' }
@@ -281,7 +308,7 @@ export function parseOfflineCommand(
     } else if (lang === 'hi-IN') {
       return {
         type: 'ADD_NOTE',
-        spokenResponse: `मैंने आपकी नोट सुरक्षित कर ली है: "${content}"`,
+        spokenResponse: `नोट MRUNEEL ऐप की स्थानीय सूची में सेव की: "${content}"`,
         payload: { content, title: 'मृणील नोट' },
         actionTaken: `नोट सुरक्षित की`,
         newContext: { ...context?.conversationalContext, lastTopic: 'note' }
@@ -289,7 +316,7 @@ export function parseOfflineCommand(
     } else {
       return {
         type: 'ADD_NOTE',
-        spokenResponse: `I have recorded your note in local secure memory: "${content}"`,
+        spokenResponse: `Saved this note in the local MRUNEEL app list: "${content}"`,
         payload: { content, title: 'MRUNEEL Note' },
         actionTaken: `Note saved: ${content}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'note' }
@@ -313,25 +340,25 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'SET_REMINDER',
-        spokenResponse: `मी स्मरणपत्र नोंदवले आहे: "${reminderText}". योग्य वेळी मी आपल्याला सूचित करेन.`,
+        spokenResponse: `स्मरणपत्र अॅपमध्ये नोंदवले: "${reminderText}". प्रत्यक्ष notification schedule अजून जोडलेला नाही.`,
         payload: { title: reminderText },
-        actionTaken: `रिमाइंडर सेट: ${reminderText}`,
+        actionTaken: `अॅपमध्ये स्मरणपत्र नोंद (notification नाही): ${reminderText}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'reminder' }
       };
     } else if (lang === 'hi-IN') {
       return {
         type: 'SET_REMINDER',
-        spokenResponse: `रिमाइंडर जोड़ दिया गया है: "${reminderText}".`,
+        spokenResponse: `रिमाइंडर ऐप में दर्ज किया: "${reminderText}". Notification schedule अभी उपलब्ध नहीं है.`,
         payload: { title: reminderText },
-        actionTaken: `रिमाइंडर सेट: ${reminderText}`,
+        actionTaken: `अॅपमध्ये स्मरणपत्र नोंद (notification नाही): ${reminderText}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'reminder' }
       };
     } else {
       return {
         type: 'SET_REMINDER',
-        spokenResponse: `Reminder registered: "${reminderText}". I will notify you at the appropriate time, Sir.`,
+        spokenResponse: `Reminder saved in the app list: "${reminderText}". A system notification has not been scheduled yet.`,
         payload: { title: reminderText },
-        actionTaken: `Reminder set: ${reminderText}`,
+        actionTaken: `App reminder saved (no notification scheduled): ${reminderText}`,
         newContext: { ...context?.conversationalContext, lastTopic: 'reminder' }
       };
     }
@@ -373,14 +400,14 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'LOCK_SYSTEM',
-        spokenResponse: `सिस्टीम बायोमेट्रिक सुरक्षा लॉक सक्रिय करण्यात आली आहे, ${honorific}.`,
-        actionTaken: 'सिस्टीम लॉक'
+        spokenResponse: `MRUNEEL अॅप लॉक सुरू करत आहे; Android फोनचा system lock सक्रिय केलेला नाही.`,
+        actionTaken: 'MRUNEEL अॅप लॉक'
       };
     } else {
       return {
         type: 'LOCK_SYSTEM',
-        spokenResponse: 'Biometric and PIN security protocols engaged. System locked, Sir.',
-        actionTaken: 'System Locked'
+        spokenResponse: 'MRUNEEL app lock engaged. Android system lock was not triggered.',
+        actionTaken: 'MRUNEEL app locked'
       };
     }
   }
@@ -399,7 +426,7 @@ export function parseOfflineCommand(
     if (lang === 'mr-IN') {
       return {
         type: 'GENERAL_RESPONSE',
-        spokenResponse: `नमस्कार! मी मृणील (MRUNEEL), तुमचा प्रगत वैयक्तिक एआय सहाय्यक. जार्व्हिसच्या संकल्पनेवर आधारित, मी मराठी, हिंदी आणि इंग्रजीत बोलू शकतो आणि ऑफलाइनही तुमची कामे सांभाळू शकतो.`,
+        spokenResponse: `नमस्कार! मी मृणील (MRUNEEL), तुमचा प्रगत वैयक्तिक एआय सहाय्यक. जार्व्हिसच्या संकल्पनेवर आधारित, मी मराठी, हिंदी आणि इंग्रजीत बोलू शकतो; इंटरनेट नसतानाही समर्थित स्थानिक कामे करू शकतो.`,
         newContext: { ...context?.conversationalContext, lastTopic: 'greeting' }
       };
     } else if (lang === 'hi-IN') {
@@ -479,19 +506,19 @@ export function parseOfflineCommand(
   if (lang === 'mr-IN') {
     return {
       type: 'UNKNOWN',
-      spokenResponse: `${honorific}, मी आपले म्हणणे ("${text}") ऐकले. सध्या डिव्हाइस ऑफलाइन असल्याने या विषयावर सखोल माहिती देण्यासाठी क्लाउड नेटवर्क उपलब्ध नाही. मी खोटे उत्तर देणार नाही; तरीही आपले गजर, बॅटरी, स्मरणपत्रे किंवा नोट्स यासारखे सर्व स्थानिक प्रोटोकॉल पूर्णपणे सक्रिय आहेत.`,
+      spokenResponse: `${honorific}, मी आपले म्हणणे ("${text}") ऐकले. क्लाउड नेटवर्क उपलब्ध नाही आणि या विनंतीसाठी समर्थित स्थानिक कृती सापडली नाही. मी अंदाज किंवा खोटी action success सांगणार नाही.`,
       newContext: { ...context?.conversationalContext, lastTopic: 'general', lastQuery: text }
     };
   } else if (lang === 'hi-IN') {
     return {
       type: 'UNKNOWN',
-      spokenResponse: `${honorific}, मैंने आपका संदेश ("${text}") सुना। वर्तमान में ऑफलाइन होने के कारण इस विषय पर विस्तृत उत्तर सीमित है, लेकिन आपके सभी डिवाइस कमांड्स सक्रिय हैं।`,
+      spokenResponse: `${honorific}, आपका संदेश सुना। नेटवर्क उपलब्ध नहीं है और इस अनुरोध के लिए समर्थित स्थानीय कार्रवाई नहीं मिली; मैं कोई सफलता का दावा नहीं करूँगा।`,
       newContext: { ...context?.conversationalContext, lastTopic: 'general', lastQuery: text }
     };
   } else {
     return {
       type: 'UNKNOWN',
-      spokenResponse: `Understood, Sir. While operating in autonomous offline mode, cloud database access for "${text}" is restricted. Device hardware controls, alarms, and personal notes remain fully operational.`,
+      spokenResponse: `I heard: "${text}". Cloud access is unavailable and no supported local action matched this request, so I will not claim it completed.`,
       newContext: { ...context?.conversationalContext, lastTopic: 'general', lastQuery: text }
     };
   }

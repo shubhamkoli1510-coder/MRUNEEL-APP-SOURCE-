@@ -111,9 +111,9 @@ public class AndroidDeviceActionsPlugin extends Plugin {
         String target = call.getString("target");
         Intent intent;
         if ("wifi".equals(target)) {
-            intent = new Intent(Build.VERSION.SDK_INT >= 29 ? Settings.Panel.ACTION_WIFI : Settings.ACTION_WIFI);
+            intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
         } else if ("bluetooth".equals(target)) {
-            intent = new Intent(Build.VERSION.SDK_INT >= 29 ? Settings.Panel.ACTION_BLUETOOTH : Settings.ACTION_BLUETOOTH);
+            intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
         } else if ("settings".equals(target)) {
             intent = new Intent(Settings.ACTION_SETTINGS);
         } else if ("camera".equals(target)) {
@@ -135,6 +135,53 @@ public class AndroidDeviceActionsPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Could not open requested screen", e);
         }
+    }
+
+    @PluginMethod
+    public void requestSystemAlarm(PluginCall call) {
+        Integer hour = call.getInt("hour");
+        Integer minute = call.getInt("minute");
+        String label = call.getString("label", "MRUNEEL alarm");
+        if (hour == null || minute == null || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+            call.reject("Alarm time must be valid 24-hour hour/minute values");
+            return;
+        }
+        Intent intent = new Intent(android.provider.AlarmClock.ACTION_SET_ALARM);
+        intent.putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour);
+        intent.putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute);
+        intent.putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, label);
+        intent.putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false);
+        try {
+            if (intent.resolveActivity(getContext().getPackageManager()) == null) {
+                call.reject("No system clock app can configure alarms");
+                return;
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve(new com.getcapacitor.JSObject().put("hour", hour).put("minute", minute).put("awaitingUserConfirmation", true));
+        } catch (Exception e) { call.reject("Could not open system alarm setup", e); }
+    }
+
+    @PluginMethod
+    public void launchApp(PluginCall call) {
+        String appId = call.getString("appId");
+        String packageName = null;
+        if ("whatsapp".equals(appId)) packageName = "com.whatsapp";
+        else if ("youtube".equals(appId)) packageName = "com.google.android.youtube";
+        else if ("chrome".equals(appId)) packageName = "com.android.chrome";
+        else if ("maps".equals(appId)) packageName = "com.google.android.apps.maps";
+        else if ("phone".equals(appId)) packageName = "com.samsung.android.dialer";
+        else if ("camera".equals(appId)) packageName = "com.sec.android.app.camera";
+        else if ("calculator".equals(appId)) packageName = "com.sec.android.app.popupcalculator";
+        else if ("settings".equals(appId)) packageName = "com.android.settings";
+        else { call.reject("App target is not allowlisted"); return; }
+        try {
+            Intent launch = getContext().getPackageManager().getLaunchIntentForPackage(packageName);
+            if (launch == null) { call.reject("Allowlisted app is not installed or has no launcher activity"); return; }
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(launch);
+            call.resolve(new com.getcapacitor.JSObject().put("appId", appId).put("packageName", packageName));
+        } catch (Exception e) { call.reject("Could not launch allowlisted app", e); }
     }
 
     @PluginMethod

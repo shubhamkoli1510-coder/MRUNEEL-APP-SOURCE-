@@ -66,8 +66,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, languag
         } else {
           setErrorMsg(
             language === 'mr-IN'
-              ? `चुकीचा पिन. (डीफॉल्ट पिन: 1234) शिल्लक प्रयत्न: ${3 - newFails}`
-              : `Incorrect PIN. (Default: 1234) Remaining: ${3 - newFails}`
+              ? `चुकीचा पिन. शिल्लक प्रयत्न: ${3 - newFails}`
+              : `Incorrect PIN. Remaining: ${3 - newFails}`
           );
         }
       }
@@ -129,8 +129,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, languag
         </h1>
         <p className="text-xs text-amber-400/70 mb-4 font-mono text-center">
           {language === 'mr-IN'
-            ? 'बायोमेट्रिक किंवा ४-अंकी पिन प्रविष्ट करा'
-            : 'ENTER 4-DIGIT MASTER PIN OR BIOMETRICS'}
+            ? '४-अंकी PIN प्रविष्ट करा (Biometric unlock अजून उपलब्ध नाही)'
+            : 'ENTER 4-DIGIT PIN (BIOMETRIC UNLOCK NOT AVAILABLE)'}
         </p>
 
         {/* PIN Indicators */}

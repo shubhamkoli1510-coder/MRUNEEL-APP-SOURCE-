@@ -55,7 +55,7 @@ public class AndroidSettingsPlugin extends Plugin {
 
     @PluginMethod
     public void openAssistantSettings(PluginCall call) {
-        openIntent(call, new Intent(Settings.ACTION_ASSISTANT_SETTINGS));
+        openIntent(call, new Intent("android.settings.VOICE_INPUT_SETTINGS"));
     }
 
     @PluginMethod

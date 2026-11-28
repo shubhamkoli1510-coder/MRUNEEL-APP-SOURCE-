@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { AssistantSettings, PersonalMemory, SupportedLanguage } from '../types/assistant';
 import { MemoryManager } from '../utils/memoryManager';
-import { saveNewPin } from '../utils/security';
+import { saveNewPin, isCustomPinConfigured } from '../utils/security';
 import { soundFx } from '../utils/audioSynthesizer';
 import { deviceBridge } from '../utils/deviceBridge';
 import { androidSettings } from '../utils/androidSettings';
@@ -55,6 +55,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!isOpen) return null;
 
   const handleSettingChange = <K extends keyof AssistantSettings>(key: K, value: AssistantSettings[K]) => {
+    if (key === 'biometricLockEnabled' && value === true && !isCustomPinConfigured()) {
+      setPinChangeMsg('App lock सुरू करण्यापूर्वी नवीन PIN सेट कर. Default PIN सुरक्षित नाही.');
+      return;
+    }
     soundFx.playKeyClick();
     const updated = { ...settings, [key]: value };
     onUpdateSettings(updated);
@@ -251,8 +255,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="font-bold text-amber-300 font-mono">सहाय्यक स्विचेस (System Toggles)</div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="font-semibold text-amber-200">वेक वर्ड "मृणील" सक्रिय ठेवा</span>
-                    <p className="text-[11px] text-amber-500/60">Continuous background wake-word listening</p>
+                    <span className="font-semibold text-amber-200">Foreground wake word "मृणील"</span>
+                    <p className="text-[11px] text-amber-500/60">फक्त app foreground/idle असताना; screen-off background lifecycle अजून पूर्ण नाही</p>
                   </div>
                   <input
                     type="checkbox"
@@ -294,8 +298,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="space-y-4">
               <div className="p-3 bg-amber-950/20 border border-amber-500/20 rounded-xl text-xs text-amber-300">
                 <p>
-                  मृणील या स्मृती वापरून तुम्हाला वैयक्तिकृत उत्तरे देतो. ही माहिती थेट तुमच्या फोनमध्ये सुरक्षित साठवली जाते.
+                  मृणीलच्या स्मृती या डिव्हाइसवर साठतात. Cloud AI सोबत शेअर करणे स्वतंत्र परवानगीनेच सुरू होईल.
                 </p>
+              </div>
+              <div className="p-3 rounded-xl border border-amber-500/30 bg-black/70 text-xs text-amber-200 flex items-center justify-between gap-3">
+                <div>
+                  <strong className="text-amber-300">Cloud AI ला स्मृती पाठवण्याची परवानगी</strong>
+                  <p className="mt-1 text-[11px] text-amber-400/70">OFF असेल तर तुमच्या वैयक्तिक memory entries server ला पाठवल्या जाणार नाहीत. Default OFF.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.cloudMemoryConsent}
+                  onChange={e => handleSettingChange('cloudMemoryConsent', e.target.checked)}
+                  aria-label="Allow personal memories to be sent to cloud AI"
+                  className="w-5 h-5 accent-amber-500 cursor-pointer shrink-0"
+                />
               </div>
 
               {/* Add Memory Form */}
@@ -415,7 +432,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 { title: 'Accessibility settings', detail: 'Accessibility service सेटिंग्ज; MRUNEEL सध्या service enable करत नाही', fn: androidSettings.openAccessibilitySettings },
                 { title: 'Notification settings', detail: 'MRUNEEL notifications परवानगी / channel व्यवस्थापन', fn: androidSettings.openNotificationSettings },
                 { title: 'Battery optimization', detail: 'Background battery restrictions पाहा; exemption स्वतः मंजूर कर', fn: androidSettings.openBatterySettings },
-                { title: 'Default assistant', detail: 'Android digital assistant निवड स्क्रीन', fn: androidSettings.openAssistantSettings },
+                { title: 'Voice input settings', detail: 'Voice input settings; default assistant selection may vary by Android version', fn: androidSettings.openAssistantSettings },
                 { title: 'Exact alarms', detail: 'Exact alarm special access (Android 12+)', fn: androidSettings.openExactAlarmSettings },
               ].map(item => (
                 <button key={item.title} onClick={() => item.fn().catch(err => window.alert(err?.message || 'Settings उघडता आले नाही'))}
@@ -437,7 +454,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
                 <form onSubmit={handleUpdatePin} className="space-y-3">
                   <p className="text-[11px] text-amber-400/80">
-                    सध्याचा डीफॉल्ट पिन: <strong>1234</strong>. नवीन ४-अंकी गुप्त पिन सेट करा.
+                    सध्याचा default PIN बदलून स्वतःचा PIN सेट करा. App lock सुरू करण्यापूर्वी custom PIN आवश्यक आहे.
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -466,8 +483,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="font-bold text-amber-300 font-mono">बायोमेट्रिक ऑटो-लॉक</div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="font-semibold text-amber-200">अॅप सुरू करताना सुरक्षा लॉक विचारा</span>
-                    <p className="text-[11px] text-amber-500/60">Require PIN or Biometrics on app launch</p>
+                    <span className="font-semibold text-amber-200">अॅप सुरू करताना PIN सुरक्षा लॉक विचारा</span>
+                    <p className="text-[11px] text-amber-500/60">Require PIN on app launch; biometric unlock is not implemented yet</p>
                   </div>
                   <input
                     type="checkbox"

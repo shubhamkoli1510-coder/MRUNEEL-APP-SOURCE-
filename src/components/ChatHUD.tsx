@@ -125,7 +125,14 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
                   </div>
                 )}
 
-                <p className="whitespace-pre-wrap leading-relaxed select-text">{msg.text}</p>
+                <p className="whitespace-pre-wrap leading-relaxed select-text">{msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, partIndex) => {
+                  if (/^https?:\/\//i.test(part)) {
+                    const cleanUrl = part.replace(/[),.!?]+$/, '');
+                    const trailing = part.slice(cleanUrl.length);
+                    return <React.Fragment key={partIndex}><a href={cleanUrl} target="_blank" rel="noopener noreferrer" className="underline text-cyan-300 break-all">{cleanUrl}</a>{trailing}</React.Fragment>;
+                  }
+                  return part;
+                })}</p>
 
                 {/* Actions Taken Tag */}
                 {msg.actionsTaken && msg.actionsTaken.length > 0 && (

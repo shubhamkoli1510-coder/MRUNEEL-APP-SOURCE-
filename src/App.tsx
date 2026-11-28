@@ -25,7 +25,12 @@ import { deviceBridge } from './utils/deviceBridge';
 import { androidDeviceActions } from './utils/androidDeviceActions';
 import { parseOfflineCommand } from './utils/offlineEngine';
 import { ConversationalContext } from './utils/marathiConversationalEngine';
-import { routeRequest } from './core/brainRouter';
+import { runAgentTurn } from './core/agentKernel';
+import { createTaskPlan } from './core/taskPlanner';
+import { executePlanStep } from './core/taskExecutor';
+import { androidDeviceAdapter } from './core/androidDeviceAdapterNative';
+import { createMemoryCommandStore, handleMemoryCommand } from './core/memoryCommands';
+import { formatResearchResponse, type ResearchSource } from './core/researchGrounding';
 
 // Components
 import { TelemetryBar } from './components/TelemetryBar';
@@ -98,7 +103,7 @@ export default function App() {
       text:
         settings.defaultLanguage === 'mr-IN'
           ? `हा बछा, मी इथंच आहे, बोल! "मृणील" म्हणा किंवा कोरवर टॅप करा.`
-          : `Online. I am MRUNEEL. All Android core subsystems calibrated and standing by. Say "Mruneel" or tap the core.`,
+          : `MRUNEEL ready. Say "Mruneel" or tap the core. Phone actions depend on supported integrations and permissions.`,
       language: settings.defaultLanguage,
       timestamp: Date.now(),
     },
@@ -188,7 +193,8 @@ export default function App() {
     if (!queryText.trim()) return;
 
     // Brain Router: classify and gate high-risk external actions before AI processing.
-    const brainRoute = routeRequest(queryText);
+    const agentTurn = runAgentTurn({ text: queryText });
+    const brainRoute = agentTurn.route;
 
     // Add user message to conversation log
     const userMsg: ChatMessage = {
@@ -201,6 +207,20 @@ export default function App() {
     setMessages(prev => [...prev, userMsg]);
     setAssistantState('thinking');
     setInterimVoiceText('');
+
+    // Explicit local-memory commands: save, recall, and clear only.
+    // Storage stays on this device; nothing is uploaded or implicitly remembered.
+    const memoryCommand = handleMemoryCommand(queryText, createMemoryCommandStore(), language === 'mr-IN' ? 'mr-IN' : 'en-US');
+    if (memoryCommand.handled) {
+      const memoryReply: ChatMessage = {
+        id: `bot-${Date.now()}`, sender: 'mruneel', text: memoryCommand.response, language, timestamp: Date.now(),
+        isOfflineResponse: !navigator.onLine, actionsTaken: [`Local memory: ${memoryCommand.action}`],
+      };
+      setMessages(prev => [...prev, memoryReply]);
+      setAssistantState('speaking');
+      speechService.speak(memoryCommand.response, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      return;
+    }
 
     // Never let high-risk requests be treated as completed actions by the chat model.
     if (brainRoute.disposition === 'approval_required' && brainRoute.decision.risk === 'high') {
@@ -221,33 +241,51 @@ export default function App() {
       return;
     }
 
-    // Safe native device intents run locally even when the cloud is online.
-    // The parser only recognizes an allowlisted target or a one-step volume adjustment.
+    // Coding intents open the proposal-only Coding Lab; no automatic source mutation.
+    if (agentTurn.route.decision.intent === 'coding') {
+      setShowCodingLab(true);
+      const codingNotice = language === 'mr-IN'
+        ? 'Coding Lab उघडलं. बदलाचा प्रस्ताव तयार करण्यासाठी संबंधित file path आणि source code तिथे दे. मी repository आपोआप बदलत नाही.'
+        : 'Coding Lab opened. Provide the exact file path and source there to generate a reviewable proposal. Repository files are not changed automatically.';
+      const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: codingNotice, language, timestamp: Date.now(), actionsTaken: ['Coding Lab opened', 'Proposal-only; no files changed'] };
+      setMessages(prev => [...prev, reply]);
+      setAssistantState('speaking');
+      speechService.speak(codingNotice, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      return;
+    }
+
+    // Safe native device intents go through the shared planner + executor + adapter.
+    // A direct, explicit user command is consent for these allowlisted low-impact actions only.
     const deviceIntent = parseOfflineCommand(queryText, language, { honorific: settings.honorific });
-    if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'ADJUST_VOLUME') {
+    if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'OPEN_APP' || deviceIntent.type === 'SET_ALARM' || deviceIntent.type === 'ADJUST_VOLUME') {
+      if (deviceIntent.type === 'SET_ALARM' && typeof deviceIntent.payload?.time !== 'string') {
+        const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: deviceIntent.spokenResponse, language, timestamp: Date.now(), actionsTaken: ['No alarm action executed; time needed'] };
+        setMessages(prev => [...prev, reply]);
+        setAssistantState('speaking');
+        speechService.speak(deviceIntent.spokenResponse, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+        return;
+      }
+      const plan = createTaskPlan(queryText);
+      const execution = await executePlanStep({ plan, adapter: androidDeviceAdapter, approved: true });
       let actionText = deviceIntent.spokenResponse;
       const performed: string[] = [];
-      try {
-        if (Capacitor.getPlatform() !== 'android') {
-          throw new Error('Native Android controls are only available on Android');
-        }
-        if (deviceIntent.type === 'OPEN_SCREEN') {
-          const target = deviceIntent.payload?.target as 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer';
-          await androidDeviceActions.openScreen(target);
-          performed.push(`Opened Android screen: ${target}`);
-        } else {
-          const direction = deviceIntent.payload?.direction as -1 | 1;
-          const result = direction > 0 ? await androidDeviceActions.volumeUp() : await androidDeviceActions.volumeDown();
-          performed.push(`Media volume: ${result.volume}/${result.max}`);
+      if (execution.status === 'completed') {
+        performed.push(execution.summary);
+        if (deviceIntent.type === 'OPEN_APP') {
+          actionText = language === 'mr-IN' ? 'अॅप उघडलं. Android adapter ने launch ची पुष्टी दिली.' : 'App launched and confirmed by the Android adapter.';
+        } else if (deviceIntent.type === 'SET_ALARM') {
+          actionText = language === 'mr-IN' ? 'फोनचा Clock उघडला. अलार्म सेट करण्यासाठी तिथे वेळ तपासून confirm कर; confirm होईपर्यंत अलार्म सेट झालेला नाही.' : 'The system Clock alarm setup opened. Review and confirm there; the alarm is not scheduled until you confirm it.';
+        } else if (deviceIntent.type === 'ADJUST_VOLUME') {
+          const data = execution.summary.match(/(\d+\/\d+)/)?.[1];
           actionText = language === 'mr-IN'
-            ? `आवाज आता ${result.volume}/${result.max} आहे.`
-            : `Media volume is now ${result.volume} of ${result.max}.`;
+            ? (data ? `आवाज आता ${data} आहे.` : 'आवाज बदलला; native adapter ने कृती पूर्ण झाल्याची पुष्टी दिली.')
+            : (data ? `Media volume is now ${data}.` : 'Volume adjusted and confirmed by the native adapter.');
         }
-      } catch (error) {
+      } else {
         actionText = language === 'mr-IN'
           ? 'ही डिव्हाइस कृती पूर्ण झाली नाही. फोनची परवानगी किंवा उपलब्धता तपास.'
           : 'That device action could not be completed. Check Android availability and permissions.';
-        performed.push('Device action failed; not reported as completed');
+        performed.push(execution.summary);
       }
       const deviceReply: ChatMessage = {
         id: `bot-${Date.now()}`, sender: 'mruneel', text: actionText, language, timestamp: Date.now(),
@@ -256,6 +294,46 @@ export default function App() {
       setMessages(prev => [...prev, deviceReply]);
       setAssistantState('speaking');
       speechService.speak(actionText, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      return;
+    }
+
+    // Grounded Research: only send research-intent queries to the Search-enabled server endpoint.
+    if (agentTurn.mode === 'research') {
+      if (!navigator.onLine || settings.offlineFirstMode) {
+        const unavailable = language === 'mr-IN'
+          ? 'सध्या इंटरनेट शोध उपलब्ध नाही. Offline mode मुळे live sources तपासलेले नाहीत.'
+          : 'Live web research is unavailable offline. I have not checked current sources.';
+        const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: unavailable, language, timestamp: Date.now(), isOfflineResponse: true, actionsTaken: ['Research not executed: offline'] };
+        setMessages(prev => [...prev, reply]);
+        setAssistantState('speaking');
+        speechService.speak(unavailable, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/gemini/research`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(45000),
+          body: JSON.stringify({ message: queryText, language }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.details || data.error || 'Research request failed');
+        const sources = Array.isArray(data.sources) ? data.sources as ResearchSource[] : [];
+        const answer = typeof data.text === 'string' ? data.text : 'Research provider returned no answer.';
+        const searchQueries = Array.isArray(data.searchQueries) ? data.searchQueries.filter((q: unknown): q is string => typeof q === 'string') : [];
+        const displayText = formatResearchResponse(answer, sources, searchQueries);
+        const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: displayText, language, timestamp: Date.now(), actionsTaken: [`Grounded research: ${sources.length} sources`] };
+        setMessages(prev => [...prev, reply]);
+        setAssistantState('speaking');
+        speechService.speak(answer, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      } catch (err) {
+        const failed = language === 'mr-IN'
+          ? 'वेब शोध पूर्ण झाला नाही. सर्व्हर किंवा Google Search grounding उपलब्ध आहे का तपास. कोणतेही अप्रमाणित उत्तर दिलेले नाही.'
+          : 'Web research failed. Check the server and Google Search grounding availability. No unverified result was presented.';
+        const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: failed, language, timestamp: Date.now(), isOfflineResponse: true, actionsTaken: ['Research failed', err instanceof Error ? err.message.slice(0, 100) : 'Unknown error'] };
+        setMessages(prev => [...prev, reply]);
+        setAssistantState('speaking');
+        speechService.speak(failed, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      }
       return;
     }
 
@@ -356,7 +434,7 @@ export default function App() {
               honorific: settings.honorific || '',
               conversationStyle: language === 'mr-IN' ? 'natural_kolhapuri_marathi' : 'natural_conversational',
             },
-            personalMemories: memories,
+            personalMemories: settings.cloudMemoryConsent ? memories : '',
             telemetry: {
               batteryLevel: telemetry.batteryLevel,
               networkType: telemetry.networkType,

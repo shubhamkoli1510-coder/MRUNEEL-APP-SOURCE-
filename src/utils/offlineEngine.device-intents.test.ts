@@ -36,3 +36,15 @@ test('volume commands are bounded single-step intents', () => {
   assert.equal(parseOfflineCommand('volume up').payload?.direction, 1);
   assert.equal(parseOfflineCommand('आवाज कमी कर').payload?.direction, -1);
 });
+
+test('recognizes allowlisted WhatsApp launcher', () => {
+  const result = parseOfflineCommand('open WhatsApp');
+  assert.equal(result.type, 'OPEN_APP');
+  assert.equal(result.payload?.appId, 'whatsapp');
+});
+
+test('recognizes allowlisted YouTube launcher in Marathi', () => {
+  const result = parseOfflineCommand('यूट्यूब उघड');
+  assert.equal(result.type, 'OPEN_APP');
+  assert.equal(result.payload?.appId, 'youtube');
+});

@@ -6,12 +6,12 @@ test("registry contains unique tool ids", () => {
   const all = listTools({ includeDisabled: true });
   assert.equal(new Set(all.map((tool) => tool.id)).size, all.length);
 });
-test("disabled adapters are not routable", () => {
+test("device bridge remains disabled while research and coding tools are enabled", () => {
   assert.equal(canRouteToTool("device_bridge"), false);
-  assert.equal(canRouteToTool("coding_lab"), false);
+  assert.equal(canRouteToTool("coding_lab"), true);
 });
 test("only enabled tools appear in default list", () => {
-  assert.deepEqual(listTools().map((tool) => tool.id), ["conversation"]);
+  assert.deepEqual(listTools().map((tool) => tool.id), ["conversation", "research", "coding_lab"]);
 });
 test("high-impact external action is approval-gated", () => {
   const tool = getTool("external_action");
