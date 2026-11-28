@@ -8,6 +8,7 @@ on:
       - feature/mruneel-tools-registry-phase1
       - feature/mruneel-brain-router-phase1
       - feature/mruneel-memory-policy-phase1
+      - feature/mruneel-memory-storage-phase1
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
@@ -21,13 +22,14 @@ on:
       - feature/mruneel-decision-engine-phase1
       - feature/mruneel-brain-router-phase1
       - feature/mruneel-memory-policy-phase1
+      - feature/mruneel-memory-storage-phase1
 
 permissions:
   contents: read
 
 jobs:
   branch-build:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && (github.head_ref == 'feature/coding-lab-review-test-workflow' || github.head_ref == 'feature/mruneel-decision-engine-phase1' || github.head_ref == 'feature/mruneel-tools-registry-phase1' || github.head_ref == 'feature/mruneel-brain-router-phase1' || github.head_ref == 'feature/mruneel-memory-policy-phase1'))
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && (github.head_ref == 'feature/coding-lab-review-test-workflow' || github.head_ref == 'feature/mruneel-decision-engine-phase1' || github.head_ref == 'feature/mruneel-tools-registry-phase1' || github.head_ref == 'feature/mruneel-brain-router-phase1' || github.head_ref == 'feature/mruneel-memory-policy-phase1' || github.head_ref == 'feature/mruneel-memory-storage-phase1'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch

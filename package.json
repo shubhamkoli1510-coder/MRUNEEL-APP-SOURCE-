@@ -11,10 +11,11 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test:decision": "tsx --test src/core/decisionEngine.test.ts",
-    "test": "npm run test:decision && npm run test:registry && npm run test:router && npm run test:memory",
+    "test": "npm run test:decision && npm run test:registry && npm run test:router && npm run test:memory && npm run test:memory-store",
     "test:registry": "tsx --test src/core/toolsRegistry.test.ts",
     "test:router": "tsx --test src/core/brainRouter.test.ts",
-    "test:memory": "tsx --test src/core/memoryPolicy.test.ts"
+    "test:memory": "tsx --test src/core/memoryPolicy.test.ts",
+    "test:memory-store": "tsx --test src/core/memoryStore.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
