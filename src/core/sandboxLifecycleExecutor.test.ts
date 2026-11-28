@@ -13,7 +13,9 @@ function approvedPlan() {
   };
   const review = buildSandboxExecutionPlan(input);
   const plan = buildSandboxExecutionPlan({ ...input, approvedPlanHash: review.planHash ?? undefined });
-  return { plan, policy: buildSandboxLifecyclePolicy(plan, { maxOutputBytes: 128 }) };
+  const reviewedPolicy = buildSandboxLifecyclePolicy(plan, { maxOutputBytes: 128 });
+  // Tests explicitly simulate a separately enabled execution gate; production readiness remains false.
+  return { plan, policy: { ...reviewedPolicy, executionEnabled: true } };
 }
 
 function mockDriver(overrides: Partial<SandboxLifecycleDriver> = {}) {
@@ -35,6 +37,24 @@ function mockDriver(overrides: Partial<SandboxLifecycleDriver> = {}) {
   };
   return { driver, calls };
 }
+
+test("refuses execution while the lifecycle policy keeps execution disabled", async () => {
+  const input = {
+    commands: ["npm run test:sandbox-policy"],
+    files: [{ path: "src/core/example.ts", content: "ok" }],
+    timeoutSeconds: 30,
+    networkPolicy: "deny-all" as const,
+  };
+  const review = buildSandboxExecutionPlan(input);
+  const plan = buildSandboxExecutionPlan({ ...input, approvedPlanHash: review.planHash ?? undefined });
+  const policy = buildSandboxLifecyclePolicy(plan);
+  const { driver, calls } = mockDriver();
+  await assert.rejects(
+    runApprovedSandboxPlan({ plan, policy, driver }),
+    /execution is not enabled/i,
+  );
+  assert.deepEqual(calls, []);
+});
 
 test("runs approved plan in safe order and always terminates", async () => {
   const { plan, policy } = approvedPlan();
