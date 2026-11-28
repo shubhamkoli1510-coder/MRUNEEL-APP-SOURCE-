@@ -15,6 +15,7 @@ interface AndroidDeviceActionsPlugin {
   vibrate(options: { durationMs?: number }): Promise<void>;
   getDeviceStatus(): Promise<DeviceStatus>;
   openScreen(options: { target: 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer' }): Promise<void>;
+  launchApp(options: { appId: 'whatsapp' | 'youtube' | 'chrome' | 'maps' | 'phone' | 'camera' | 'calculator' | 'settings' }): Promise<{ appId: string; packageName: string }>;
 }
 const NativeActions = registerPlugin<AndroidDeviceActionsPlugin>('AndroidDeviceActions');
 
@@ -26,4 +27,5 @@ export const androidDeviceActions = {
   vibrate: (durationMs = 100) => NativeActions.vibrate({ durationMs }),
   getStatus: () => NativeActions.getDeviceStatus(),
   openScreen: (target: 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer') => NativeActions.openScreen({ target }),
+  launchApp: (appId: 'whatsapp' | 'youtube' | 'chrome' | 'maps' | 'phone' | 'camera' | 'calculator' | 'settings') => NativeActions.launchApp({ appId }),
 };
