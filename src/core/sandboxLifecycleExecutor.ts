@@ -91,19 +91,30 @@ export async function runApprovedSandboxPlan(
     }
     sandboxId = sandbox.id;
 
-    await driver.waitUntilRunning(sandboxId, {
-      timeoutMs: policy.limits.startupTimeoutSeconds * 1000,
-    });
+    const startupDeadlineMs = policy.limits.startupTimeoutSeconds * 1000;
+    await withDeadline(
+      driver.waitUntilRunning(sandboxId, { timeoutMs: startupDeadlineMs }),
+      startupDeadlineMs,
+      "Sandbox startup",
+    );
 
     for (const file of plan.files) {
       const remotePath = "/workspace/" + file.path;
-      await driver.upload(sandboxId, remotePath, new TextEncoder().encode(file.content));
+      await withDeadline(
+        driver.upload(sandboxId, remotePath, new TextEncoder().encode(file.content)),
+        policy.limits.startupTimeoutSeconds * 1000,
+        "Sandbox file upload",
+      );
     }
 
     for (const command of plan.request.commands) {
       const boundedCommand = "timeout -k 2 " + plan.request.timeoutSeconds +
         " bash -lc " + shellQuote(command);
-      const events = await driver.exec(sandboxId, boundedCommand);
+      const events = await withDeadline(
+        driver.exec(sandboxId, boundedCommand),
+        policy.limits.startupTimeoutSeconds * 1000,
+        "Sandbox command setup",
+      );
       let sawExit = false;
       const iterator = events[Symbol.asyncIterator]();
       const streamDeadlineMs = (plan.request.timeoutSeconds + 2) * 1000;
