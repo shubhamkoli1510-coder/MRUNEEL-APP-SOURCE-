@@ -5,6 +5,7 @@ export interface AndroidActionPort {
   isAndroid: () => boolean;
   openScreen: (target: "wifi" | "bluetooth" | "settings" | "camera" | "dialer") => Promise<void>;
   launchApp: (appId: "whatsapp" | "youtube" | "chrome" | "maps" | "phone" | "camera" | "calculator" | "settings") => Promise<{ appId: string; packageName: string }>;
+  requestSystemAlarm: (hour: number, minute: number, label?: string) => Promise<{ hour: number; minute: number; awaitingUserConfirmation: boolean }>;
   volumeUp: () => Promise<{ volume: number; max: number }>;
   volumeDown: () => Promise<{ volume: number; max: number }>;
 }
@@ -19,6 +20,13 @@ export function createAndroidDeviceAdapter(port: AndroidActionPort): TaskAdapter
     async execute(request): Promise<AdapterResult> {
       if (!port.isAndroid()) return { ok: false, summary: "Native Android adapter unavailable on this platform." };
       const intent = parseOfflineCommand(request);
+      if (intent.type === "SET_ALARM") {
+        const time = intent.payload?.time;
+        if (typeof time !== "string" || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(time)) return { ok: false, summary: "Alarm time is invalid; no clock intent opened." };
+        const [hour, minute] = time.split(":").map(Number);
+        const result = await port.requestSystemAlarm(hour, minute, String(intent.payload?.label ?? "MRUNEEL alarm"));
+        return { ok: true, summary: "System Clock alarm setup opened for " + time + "; awaiting user confirmation.", data: result };
+      }
       if (intent.type === "OPEN_APP") {
         const appId = intent.payload?.appId;
         if (typeof appId !== "string" || !supportedApps.has(appId)) return { ok: false, summary: "App is not in the fixed allowlist; no launch attempted." };
