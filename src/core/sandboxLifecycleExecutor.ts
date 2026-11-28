@@ -62,8 +62,11 @@ export async function runApprovedSandboxPlan(
       !plan.request || !plan.planHash) {
     throw new Error("Sandbox execution requires explicit approval for the exact plan hash.");
   }
-  if (!policy.allowedToPrepare || policy.executionEnabled !== true) {
+  if (!policy.allowedToPrepare) {
     throw new Error("Sandbox lifecycle policy rejected this execution.");
+  }
+  if (policy.executionEnabled !== true) {
+    throw new Error("Sandbox execution is not enabled.");
   }
   if (plan.request.networkPolicy !== "deny-all") {
     throw new Error("Sandbox network policy must be deny-all.");
