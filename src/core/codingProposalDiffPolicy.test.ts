@@ -69,6 +69,6 @@ test("rejects hunks whose declared line counts are incomplete", () => {
 });
 
 test("rejects context-only hunks with no actual edit", () => {
- const contextOnly = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\\n+++ b/src/core/a.ts\\n@@ -1 +1 @@\\n same"));
+ const contextOnly = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@\n same"));
  assert.ok(contextOnly.errors.some(e => e.includes("no changed lines")));
 });
