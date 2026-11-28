@@ -26,6 +26,9 @@ import { androidDeviceActions } from './utils/androidDeviceActions';
 import { parseOfflineCommand } from './utils/offlineEngine';
 import { ConversationalContext } from './utils/marathiConversationalEngine';
 import { routeRequest } from './core/brainRouter';
+import { createTaskPlan } from './core/taskPlanner';
+import { executePlanStep } from './core/taskExecutor';
+import { androidDeviceAdapter } from './core/androidDeviceAdapterNative';
 
 // Components
 import { TelemetryBar } from './components/TelemetryBar';
@@ -221,33 +224,27 @@ export default function App() {
       return;
     }
 
-    // Safe native device intents run locally even when the cloud is online.
-    // The parser only recognizes an allowlisted target or a one-step volume adjustment.
+    // Safe native device intents go through the shared planner + executor + adapter.
+    // A direct, explicit user command is consent for these allowlisted low-impact actions only.
     const deviceIntent = parseOfflineCommand(queryText, language, { honorific: settings.honorific });
     if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'ADJUST_VOLUME') {
+      const plan = createTaskPlan(queryText);
+      const execution = await executePlanStep({ plan, adapter: androidDeviceAdapter, approved: true });
       let actionText = deviceIntent.spokenResponse;
       const performed: string[] = [];
-      try {
-        if (Capacitor.getPlatform() !== 'android') {
-          throw new Error('Native Android controls are only available on Android');
-        }
-        if (deviceIntent.type === 'OPEN_SCREEN') {
-          const target = deviceIntent.payload?.target as 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer';
-          await androidDeviceActions.openScreen(target);
-          performed.push(`Opened Android screen: ${target}`);
-        } else {
-          const direction = deviceIntent.payload?.direction as -1 | 1;
-          const result = direction > 0 ? await androidDeviceActions.volumeUp() : await androidDeviceActions.volumeDown();
-          performed.push(`Media volume: ${result.volume}/${result.max}`);
+      if (execution.status === 'completed') {
+        performed.push(execution.summary);
+        if (deviceIntent.type === 'ADJUST_VOLUME') {
+          const data = execution.summary.match(/(\\d+\\/\\d+)/)?.[1];
           actionText = language === 'mr-IN'
-            ? `आवाज आता ${result.volume}/${result.max} आहे.`
-            : `Media volume is now ${result.volume} of ${result.max}.`;
+            ? (data ? `आवाज आता ${data} आहे.` : 'आवाज बदलला; native adapter ने कृती पूर्ण झाल्याची पुष्टी दिली.')
+            : (data ? `Media volume is now ${data}.` : 'Volume adjusted and confirmed by the native adapter.');
         }
-      } catch (error) {
+      } else {
         actionText = language === 'mr-IN'
           ? 'ही डिव्हाइस कृती पूर्ण झाली नाही. फोनची परवानगी किंवा उपलब्धता तपास.'
           : 'That device action could not be completed. Check Android availability and permissions.';
-        performed.push('Device action failed; not reported as completed');
+        performed.push(execution.summary);
       }
       const deviceReply: ChatMessage = {
         id: `bot-${Date.now()}`, sender: 'mruneel', text: actionText, language, timestamp: Date.now(),
