@@ -12,7 +12,7 @@
     "lint": "tsc --noEmit",
     "test:decision": "tsx --test src/core/decisionEngine.test.ts",
     "test:device-intents": "tsx --test src/utils/offlineEngine.device-intents.test.ts",
-    "test": "npm run test:decision && npm run test:device-intents && npm run test:registry && npm run test:router && npm run test:memory && npm run test:memory-store && npm run test:memory-commands && npm run test:research-grounding && npm run test:jarvis-parity && npm run test:agent-kernel && npm run test:task-executor && npm run test:android-adapter && npm run test:android-adapter-integration && npm run test:offline-truthfulness && npm run test:security-truthfulness && npm run test:memory-privacy && npm run test:coding-agent-policy && npm run test:coding-lab-approval",
+    "test": "npm run test:decision && npm run test:device-intents && npm run test:registry && npm run test:router && npm run test:memory && npm run test:memory-store && npm run test:memory-commands && npm run test:research-grounding && npm run test:jarvis-parity && npm run test:agent-kernel && npm run test:task-executor && npm run test:android-adapter && npm run test:android-adapter-integration && npm run test:offline-truthfulness && npm run test:security-truthfulness && npm run test:memory-privacy && npm run test:coding-agent-policy && npm run test:coding-lab-approval && npm run test:autonomous-coding-loop",
     "test:registry": "tsx --test src/core/toolsRegistry.test.ts",
     "test:router": "tsx --test src/core/brainRouter.test.ts",
     "test:memory": "tsx --test src/core/memoryPolicy.test.ts",
@@ -28,7 +28,8 @@
     "test:security-truthfulness": "tsx --test src/utils/security.truthfulness.test.ts",
     "test:memory-privacy": "tsx --test src/utils/memoryManager.privacy.test.ts",
     "test:coding-lab-approval": "tsx --test src/core/codingLabApproval.test.ts && tsx --test src/core/codingLabApproval.multifile.test.ts",
-    "test:coding-agent-policy": "tsx --test src/core/codingAgentPolicy.test.ts"
+    "test:coding-agent-policy": "tsx --test src/core/codingAgentPolicy.test.ts",
+    "test:autonomous-coding-loop": "tsx --test src/core/autonomousCodingLoop.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
