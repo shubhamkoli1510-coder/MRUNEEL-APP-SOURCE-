@@ -7,6 +7,7 @@ const nativePort: AndroidActionPort = {
   isAndroid: androidDeviceActions.isAndroid,
   openScreen: androidDeviceActions.openScreen,
   launchApp: androidDeviceActions.launchApp,
+  requestSystemAlarm: androidDeviceActions.requestSystemAlarm,
   volumeUp: androidDeviceActions.volumeUp,
   volumeDown: androidDeviceActions.volumeDown,
 };
