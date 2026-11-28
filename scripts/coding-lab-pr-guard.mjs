@@ -17,8 +17,8 @@ if (!changed.length) {
 }
 const blocked = [
   /^\.github\//, /^android\//, /^server\.ts$/, /^package(?:-lock)?\.json$/,
-  /^capacitor\.config/, /^\.env/, /(^|\/)secrets?\//i,
-  /^src\/(utils\/(deviceBridge|offlineEngine|speechService|memoryManager)|components\/(LockScreen|AndroidPermissionsHub|SettingsModal))\.(ts|tsx)$/
+  /^capacitor\.config/, /(^|\/)\.env(?:$|[./])/i, /(^|\/)secrets?\//i, /\.(?:pem|key|p12|pfx|jks)$/i,
+  /(^|\/)(security|auth|permissions?|devicebridge|offlineengine|speechservice|memorymanager|lockscreen|androidpermissionshub|settingsmodal)(\.[^/]+)?$/i
 ];
 const disallowed = changed.filter(path => !path.startsWith('src/') || blocked.some(pattern => pattern.test(path)));
 if (disallowed.length) {
