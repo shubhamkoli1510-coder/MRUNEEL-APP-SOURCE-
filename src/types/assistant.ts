@@ -57,6 +57,7 @@ export interface AssistantSettings {
   biometricLockEnabled: boolean;
   pinCode: string; // 4 digits
   offlineFirstMode: boolean;
+  cloudMemoryConsent: boolean;
   selectedVoiceName?: string;
 }
 
