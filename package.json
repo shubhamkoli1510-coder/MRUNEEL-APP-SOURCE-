@@ -11,7 +11,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test:decision": "tsx --test src/core/decisionEngine.test.ts",
-    "test": "npm run test:decision"
+    "test": "npm run test:decision && npm run test:registry",
+    "test:registry": "tsx --test src/core/toolsRegistry.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
