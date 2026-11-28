@@ -2,9 +2,9 @@ name: Build Android APK (MRUNEEL)
 
 on:
   push:
-    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install, feature/native-wakeword-bridge, feature/autonomous-coding-lab ]
+    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install, feature/native-wakeword-bridge, feature/autonomous-coding-lab, feature/mruneel-jarvis-parity-foundation-phase1 ]
   pull_request:
-    branches: [ feature/native-wakeword-bridge ]
+    branches: [ feature/native-wakeword-bridge, feature/mruneel-safe-launchers-phase1 ]
   workflow_dispatch:
 
 jobs:
