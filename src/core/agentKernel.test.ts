@@ -40,3 +40,5 @@ test("enabled conversation route returns answer handoff rather than adapter unav
   assert.equal(result.executionStarted, false);
   assert.equal(result.route.selectedToolId, "conversation");
 });
+
+test("research intent returns grounded research handoff mode",()=>{const result=runAgentTurn({text:"search for latest AI news"});assert.equal(result.mode,"research");assert.equal(result.route.available,true);assert.equal(result.executionStarted,false);});
