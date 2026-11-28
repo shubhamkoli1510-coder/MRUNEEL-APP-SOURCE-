@@ -22,7 +22,7 @@ export function createAndroidDeviceAdapter(port: AndroidActionPort): TaskAdapter
       const intent = parseOfflineCommand(request);
       if (intent.type === "SET_ALARM") {
         const time = intent.payload?.time;
-        if (typeof time !== "string" || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(time)) return { ok: false, summary: "Alarm time is invalid; no clock intent opened." };
+        if (typeof time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return { ok: false, summary: "Alarm time is invalid; no clock intent opened." };
         const [hour, minute] = time.split(":").map(Number);
         const result = await port.requestSystemAlarm(hour, minute, String(intent.payload?.label ?? "MRUNEEL alarm"));
         return { ok: true, summary: "System Clock alarm setup opened for " + time + "; awaiting user confirmation.", data: result };
