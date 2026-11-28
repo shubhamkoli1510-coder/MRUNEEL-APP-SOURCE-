@@ -448,3 +448,27 @@ test("reports termination as unconfirmed when terminate call stalls beyond clean
   assert.match(result.error ?? "", /termination could not be confirmed/i);
   assert.ok(calls.includes("terminate"));
 });
+
+
+test("preserves the primary command failure when termination is unconfirmed", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = {
+    ...originalPolicy,
+    limits: { ...originalPolicy.limits, cleanupTimeoutSeconds: 1 },
+  };
+  const { driver, calls } = mockDriver({
+    exec: async () => (async function* () {
+      yield { type: "exit", exit_code: 7 } as const;
+    })(),
+    terminate: async () => {
+      calls.push("terminate");
+      return new Promise<unknown>(() => {});
+    },
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.equal(result.cleanup, "unconfirmed");
+  assert.match(result.error ?? "", /exit code 7/i);
+  assert.ok(!/termination could not be confirmed/i.test(result.error ?? ""));
+  assert.ok(calls.includes("terminate"));
+});
