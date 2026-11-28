@@ -6,6 +6,7 @@ on:
       - feature/coding-lab-review-test-workflow
       - feature/mruneel-decision-engine-phase1
       - feature/mruneel-tools-registry-phase1
+      - feature/mruneel-brain-router-phase1
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
@@ -21,7 +22,7 @@ permissions:
 
 jobs:
   branch-build:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && (github.head_ref == 'feature/coding-lab-review-test-workflow' || github.head_ref == 'feature/mruneel-decision-engine-phase1' || github.head_ref == 'feature/mruneel-tools-registry-phase1'))
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && (github.head_ref == 'feature/coding-lab-review-test-workflow' || github.head_ref == 'feature/mruneel-decision-engine-phase1' || github.head_ref == 'feature/mruneel-tools-registry-phase1' || github.head_ref == 'feature/mruneel-brain-router-phase1'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch
