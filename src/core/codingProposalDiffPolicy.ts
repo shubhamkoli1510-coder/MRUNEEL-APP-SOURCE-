@@ -40,7 +40,10 @@ export function validateCodingProposalDiff(
   }
   const headers = diff.split(/\r?\n/).filter(line => line.startsWith("+++ ") || line.startsWith("--- "));
   const changedPaths = [...new Set(headers.map(headerPath).filter((p): p is string => p !== null))];
-  if (headers.length < 2 || changedPaths.length === 0) errors.push("Unified diff file headers are missing.");\n  if (!diff.split(/\\r?\\n/).some(line => line.startsWith("@@"))) errors.push("Diff contains no hunk.");\n  if (!diff.split(/\\r?\\n/).some(line => (line.startsWith("+") && !line.startsWith("+++")) || (line.startsWith("-") && !line.startsWith("---")))) errors.push("Diff contains no changed lines.");\n  if (proposal.filesToChange?.length && proposal.filesToChange.map(normalize).sort().join("|") !== changedPaths.map(normalize).sort().join("|")) errors.push("filesToChange list does not match diff headers.");
+  if (headers.length < 2 || changedPaths.length === 0) errors.push("Unified diff file headers are missing.");
+  if (!diff.split(/\r?\n/).some(line => line.startsWith("@@"))) errors.push("Diff contains no hunk.");
+  if (!diff.split(/\r?\n/).some(line => (line.startsWith("+") && !line.startsWith("+++")) || (line.startsWith("-") && !line.startsWith("---")))) errors.push("Diff contains no changed lines.");
+  if (proposal.filesToChange?.length && proposal.filesToChange.map(normalize).sort().join("|") !== changedPaths.map(normalize).sort().join("|")) errors.push("filesToChange list does not match diff headers.");
   for (const p of changedPaths) {
     if (!safePath(p)) errors.push("Unsafe diff path: " + p);
     if (!sourcePaths.has(normalize(p))) errors.push("Diff path was not among fetched sources: " + p);
