@@ -45,25 +45,33 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
     if (!files.length || files.some(f => !f.path.trim() || !f.content.trim())) { setError('आधी repo मधून source files fetch कर.'); return; }
     if (files.length > 5 || files.some(f => f.content.length > 20000) || files.reduce((sum, f) => sum + f.content.length, 0) > 50000) { setError('Files limit: 5 files, 20k/file, 50k total.'); return; }
     setLoopState(transitionCodingLoop(initialCodingLoopState, { type: 'start', task }));
-    setLoopState(prev => transitionCodingLoop(prev, { type: 'plan_ready' }));
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/coding/plan`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(60000), body: JSON.stringify({ task, files }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Coding Lab request failed');
-      if (!data.proposal || typeof data.proposal !== 'object') throw new Error('Server ने योग्य proposal दिला नाही.');
-      setLoopState(prev => transitionCodingLoop(prev, { type: 'proposal_ready' }));
-      const proposal = data.proposal as CodingProposal;
-      if (!proposal.unifiedDiff?.trim()) {
-        setLoopState(prev => transitionCodingLoop(prev, { type: 'validation_failed', reason: 'Proposal मध्ये diff नाही; manual सुधारणा आवश्यक.' }));
-        throw new Error('Proposal मध्ये review करता येईल असा diff नाही.');
+      let feedback = '';
+      let accepted: CodingProposal | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const response = await fetch(`${API_BASE_URL}/api/coding/plan`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(60000), body: JSON.stringify({ task: feedback ? `${task}\\n\\nPrevious proposal validation feedback: ${feedback}\\nReturn a corrected proposal with a non-empty unified diff.` : task, files }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Coding Lab request failed');
+        if (!data.proposal || typeof data.proposal !== 'object') throw new Error('Server ने योग्य proposal दिला नाही.');
+        setLoopState(prev => transitionCodingLoop(prev, { type: 'plan_ready' }));
+        setLoopState(prev => transitionCodingLoop(prev, { type: 'proposal_ready' }));
+        const proposal = data.proposal as CodingProposal;
+        // Structural-only validation: non-empty diff required. No tests/commands run here.
+        if (typeof proposal.unifiedDiff === 'string' && proposal.unifiedDiff.trim()) {
+          setLoopState(prev => transitionCodingLoop(prev, { type: 'validation_passed' }));
+          accepted = proposal;
+          break;
+        }
+        feedback = 'Diff is missing or empty. Provide a concrete, reviewable unified diff.';
+        setLoopState(prev => transitionCodingLoop(prev, { type: 'validation_failed', reason: feedback }));
+        if (attempt < 2) setLoopState(prev => transitionCodingLoop(prev, { type: 'revision_ready' }));
       }
-      // Structural response check only. No test suite is run by this UI stage.
-      setLoopState(prev => transitionCodingLoop(prev, { type: 'validation_passed' }));
-      setResult(proposal);
+      if (!accepted) throw new Error('3 proposal attempts झाले; valid diff मिळाला नाही. Task/source बदलून पुन्हा प्रयत्न कर.');
+      setResult(accepted);
     } catch (e) { setError((e as Error).message || 'Server शी संपर्क झाला नाही.'); }
     finally { setLoading(false); }
   };
