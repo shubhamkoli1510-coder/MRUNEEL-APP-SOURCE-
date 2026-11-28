@@ -13,6 +13,7 @@ on:
       - feature/mruneel-diff-header-integrity-phase1
       - feature/mruneel-diff-orphan-header-guard-phase1
       - feature/mruneel-diff-malformed-hunk-guard-phase1
+      - feature/mruneel-canonical-diff-path-guard-phase1
       - feature/mruneel-sandbox-job-policy-phase1
       - feature/mruneel-render-sandbox-adapter-phase1
   pull_request:
