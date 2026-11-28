@@ -27,91 +27,13 @@ export const DEFAULT_SETTINGS: AssistantSettings = {
   cloudMemoryConsent: false,
 };
 
-const INITIAL_MEMORIES: PersonalMemory[] = [
-  {
-    id: 'mem-1',
-    key: 'नाव (Name)',
-    value: 'शुभम कोळी (Shubham Koli)',
-    category: 'personal',
-    lastUpdated: Date.now() - 86400000 * 3,
-  },
-  {
-    id: 'mem-2',
-    key: 'निवासस्थान (Location)',
-    value: 'महाराष्ट्र, भारत (Maharashtra, India)',
-    category: 'personal',
-    lastUpdated: Date.now() - 86400000 * 2,
-  },
-  {
-    id: 'mem-3',
-    key: 'भाषा प्राधान्य (Language)',
-    value: 'मराठी व इंग्रजी (Marathi & English)',
-    category: 'preference',
-    lastUpdated: Date.now() - 86400000,
-  },
-  {
-    id: 'mem-4',
-    key: 'सकाळचा चहा (Morning Routine)',
-    value: 'सकाळी ७:३० वाजता आलं-वेलची चहा आणि वृत्तपत्र वाचन',
-    category: 'routine',
-    lastUpdated: Date.now() - 3600000 * 12,
-  }
-];
+const INITIAL_MEMORIES = [];
 
-const INITIAL_ALARMS: AlarmItem[] = [
-  {
-    id: 'alm-1',
-    label: 'सकाळचा गजर (Wake Up Core)',
-    time: '06:30',
-    days: [1, 2, 3, 4, 5],
-    enabled: true,
-    sound: 'golden-pulse'
-  },
-  {
-    id: 'alm-2',
-    label: 'सायंकाळची कसरत (Fitness Protocol)',
-    time: '18:00',
-    days: [1, 3, 5],
-    enabled: false,
-    sound: 'jarvis-chime'
-  }
-];
+const INITIAL_ALARMS = [];
 
-const INITIAL_REMINDERS: ReminderItem[] = [
-  {
-    id: 'rem-1',
-    title: 'विद्युत बिल व फोन रिचार्ज करणे',
-    dueTime: new Date(Date.now() + 86400000).toISOString(),
-    priority: 'high',
-    completed: false,
-    category: 'personal'
-  },
-  {
-    id: 'rem-2',
-    title: 'प्रकल्प कोड रिव्ह्यू आणि बॅकअप पूर्ण करणे',
-    dueTime: new Date(Date.now() + 172800000).toISOString(),
-    priority: 'normal',
-    completed: false,
-    category: 'work'
-  }
-];
+const INITIAL_REMINDERS = [];
 
-const INITIAL_NOTES: NoteItem[] = [
-  {
-    id: 'not-1',
-    title: 'MRUNEEL सिस्टीम आर्किटेक्चर',
-    content: 'व्हॉइस-फर्स्ट जार्व्हिस इंटरफेस, वेक वर्ड "मृणील", कॅमेरा व्हिजन ओसीआर, स्थानिक ऑफलाइन इंजिन आणि बायोमेट्रिक सुरक्षा प्रोटोकॉल.',
-    timestamp: Date.now() - 86400000 * 2,
-    tags: ['ai', 'jarvis', 'architecture']
-  },
-  {
-    id: 'not-2',
-    title: 'आठवड्याची उद्दिष्टे (Weekly Goals)',
-    content: '१. नवीन एआय मॉडेल चाचणी\n२. अँड्रॉइड एपीके बिल्ड एक्सपोर्ट\n३. मराठी व्हॉइस मॉडेल ऑप्टिमायझेशन',
-    timestamp: Date.now() - 3600000 * 5,
-    tags: ['goals', 'personal']
-  }
-];
+const INITIAL_NOTES = [];
 
 export class MemoryManager {
   public static getSettings(): AssistantSettings {
