@@ -6,8 +6,7 @@ const SENSITIVE_HINTS = /\b(password|passcode|pin|otp|token|api key|secret|bank 
 /** Create a browser-backed memory store only when local storage exists; never sync to cloud. */
 export function createMemoryCommandStore(adapter?: MemoryStorageAdapter): MemoryStore | null {
   if (adapter) return new MemoryStore(adapter);
-  if (typeof localStorage === "undefined") return null;
-  return new MemoryStore(localStorage);
+  try { if (typeof localStorage === "undefined") return null; return new MemoryStore(localStorage); } catch { return null; }
 }
 
 /** Handles only explicit remember/recall/forget phrasing. No implicit background saving. */
@@ -30,7 +29,8 @@ export function handleMemoryCommand(text: string, store: MemoryStore | null, lan
   if (!memoryText) return { handled: true, action: "empty", response: isMarathi ? "काय लक्षात ठेवायचं ते सांग." : "Tell me what you want me to remember." };
   if (SENSITIVE_HINTS.test(memoryText)) return { handled: true, action: "blocked", response: isMarathi ? "संवेदनशील माहिती (पासवर्ड, आरोग्य, आर्थिक तपशील इ.) मी memory मध्ये सेव्ह करत नाही." : "I won't save sensitive information such as credentials, health, or financial details." };
   if (!store) return { handled: true, action: "blocked", response: isMarathi ? "या डिव्हाइसवर local memory उपलब्ध नाही; काहीही सेव्ह केलेलं नाही." : "Local memory is unavailable; nothing was saved." };
-  const result = store.save(memoryText, { explicitConsent: true, sensitivity: "ordinary" });
+  let result: ReturnType<MemoryStore["save"]>;
+  try { result = store.save(memoryText, { explicitConsent: true, sensitivity: "ordinary" }); } catch { return { handled: true, action: "blocked", response: isMarathi ? "डिव्हाइस storage मध्ये अडचण आली; memory सेव्ह झाली नाही." : "Local storage failed; the memory was not saved." }; }
   if (result.saved === true) {
     return { handled: true, action: "saved", response: isMarathi ? "ठीक, ही सामान्य आठवण या डिव्हाइसवर सेव्ह केली. Cloud वर पाठवलेली नाही." : "Saved this ordinary memory locally on this device. It was not sent to the cloud." };
   }
