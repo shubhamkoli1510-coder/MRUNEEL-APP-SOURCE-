@@ -345,3 +345,27 @@ test("enforces cumulative command event-stream deadline despite periodic events"
   assert.equal(result.cleanup, "terminated");
   assert.ok(calls.includes("terminate"));
 });
+
+
+test("bounds a stalled iterator cleanup and still terminates sandbox", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = {
+    ...originalPolicy,
+    limits: { ...originalPolicy.limits, cleanupTimeoutSeconds: 1 },
+  };
+  const { driver, calls } = mockDriver({
+    exec: async () => ({
+      [Symbol.asyncIterator]() {
+        return {
+          next: async () => ({ done: false, value: { type: "invalid" } as any }),
+          return: async () => new Promise<IteratorResult<SandboxExecEvent>>(() => {}),
+        };
+      },
+    }),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /unknown event type/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+});
