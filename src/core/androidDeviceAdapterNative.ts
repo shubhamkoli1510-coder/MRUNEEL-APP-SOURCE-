@@ -6,6 +6,7 @@ import type { AndroidActionPort } from "./androidDeviceAdapter";
 const nativePort: AndroidActionPort = {
   isAndroid: androidDeviceActions.isAndroid,
   openScreen: androidDeviceActions.openScreen,
+  launchApp: androidDeviceActions.launchApp,
   volumeUp: androidDeviceActions.volumeUp,
   volumeDown: androidDeviceActions.volumeDown,
 };
