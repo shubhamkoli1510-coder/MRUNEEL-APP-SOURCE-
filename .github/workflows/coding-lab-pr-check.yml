@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/coding-lab-review-test-workflow
+      - feature/mruneel-decision-engine-phase1
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
@@ -19,7 +20,7 @@ permissions:
 
 jobs:
   branch-build:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.head_ref == 'feature/coding-lab-review-test-workflow')
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && (github.head_ref == 'feature/coding-lab-review-test-workflow' || github.head_ref == 'feature/mruneel-decision-engine-phase1'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch
@@ -33,6 +34,8 @@ jobs:
         run: npm install --legacy-peer-deps
       - name: Type-check
         run: npm run lint
+      - name: Decision engine unit tests
+        run: npm test
       - name: Production build
         run: npm run build
 
