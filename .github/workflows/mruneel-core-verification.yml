@@ -22,6 +22,7 @@ on:
       - feature/mruneel-sandbox-iterator-cleanup-phase1
       - feature/mruneel-sandbox-iterator-cleanup-timeout-test-phase1
       - feature/mruneel-sandbox-stalled-next-cleanup-phase1
+      - feature/mruneel-sandbox-timeout-stalled-cleanup-phase1
       - feature/mruneel-approval-path-integrity-phase1
       - feature/mruneel-sandbox-stream-timeout-phase1
       - feature/mruneel-sandbox-event-protocol-guard-phase1
