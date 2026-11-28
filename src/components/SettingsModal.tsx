@@ -9,12 +9,16 @@ import {
   X,
   Volume2,
   Lock,
+  Smartphone,
+  ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import { AssistantSettings, PersonalMemory, SupportedLanguage } from '../types/assistant';
 import { MemoryManager } from '../utils/memoryManager';
 import { saveNewPin } from '../utils/security';
 import { soundFx } from '../utils/audioSynthesizer';
 import { deviceBridge } from '../utils/deviceBridge';
+import { androidSettings } from '../utils/androidSettings';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -29,7 +33,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onUpdateSettings,
 }) => {
-  const [activeTab, setActiveTab] = useState<'voice' | 'memory' | 'security'>('voice');
+  const [activeTab, setActiveTab] = useState<'voice' | 'memory' | 'security' | 'device'>('voice');
   const [memories, setMemories] = useState<PersonalMemory[]>(() => MemoryManager.getMemories());
 
   // Form states for memory
@@ -134,6 +138,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             }`}
           >
             <Shield className="w-4 h-4" /> सुरक्षा व पिन
+          </button>
+          <button
+            onClick={() => { soundFx.playKeyClick(); setActiveTab('device'); }}
+            className={`flex-1 py-2.5 text-xs font-mono font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors ${activeTab === 'device' ? 'text-amber-300 border-b-2 border-amber-400 bg-amber-950/30' : 'text-amber-500/60 hover:text-amber-400'}`}
+          >
+            <Smartphone className="w-4 h-4" /> Device / Developer
           </button>
         </div>
 
@@ -349,6 +359,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           )}
 
+          {/* TAB 4: ANDROID DEVICE / DEVELOPER CONTROLS */}
+          {activeTab === 'device' && (
+            <div className="space-y-3 text-xs text-amber-200">
+              <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 flex gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <div>
+                  <strong className="text-amber-300">OS-controlled settings</strong>
+                  <p className="mt-1 text-amber-200/80">MRUNEEL फक्त Android Settings उघडतो. Permission, Developer Options, Accessibility किंवा special access स्वतःहून बदलत नाही. तिथे तू स्वतः निवड कर.</p>
+                </div>
+              </div>
+              {[
+                { title: 'App permissions / App info', detail: 'Camera, microphone, location आणि app permissions तपासा', fn: androidSettings.openAppSettings },
+                { title: 'Developer Options', detail: 'USB debugging, animation scale व इतर developer settings (Android मध्ये आधी enable असणे आवश्यक)', fn: androidSettings.openDeveloperOptions },
+                { title: 'Accessibility settings', detail: 'Accessibility service सेटिंग्ज; MRUNEEL सध्या service enable करत नाही', fn: androidSettings.openAccessibilitySettings },
+                { title: 'Notification settings', detail: 'MRUNEEL notifications परवानगी / channel व्यवस्थापन', fn: androidSettings.openNotificationSettings },
+                { title: 'Battery optimization', detail: 'Background battery restrictions पाहा; exemption स्वतः मंजूर कर', fn: androidSettings.openBatterySettings },
+                { title: 'Default assistant', detail: 'Android digital assistant निवड स्क्रीन', fn: androidSettings.openAssistantSettings },
+                { title: 'Exact alarms', detail: 'Exact alarm special access (Android 12+)', fn: androidSettings.openExactAlarmSettings },
+              ].map(item => (
+                <button key={item.title} onClick={() => item.fn().catch(err => window.alert(err?.message || 'Settings उघडता आले नाही'))}
+                  className="w-full text-left p-3 rounded-xl bg-black/60 border border-amber-500/20 hover:border-amber-400/50 flex items-center justify-between gap-3">
+                  <div><div className="font-bold text-amber-300">{item.title}</div><p className="mt-1 text-amber-400/70">{item.detail}</p></div>
+                  <ExternalLink className="w-4 h-4 shrink-0 text-amber-400" />
+                </button>
+              ))}
+              <p className="text-[11px] text-amber-500/60">Developer controls म्हणजे unrestricted access नाही. USB debugging आणि system-level control enable केल्याने security risk वाढू शकतो; गरज असेल तेव्हाच वापर.</p>
+            </div>
+          )}
           {/* TAB 3: SECURITY */}
           {activeTab === 'security' && (
             <div className="space-y-4 text-xs text-amber-200">
