@@ -111,7 +111,17 @@ export async function runApprovedSandboxPlan(
         const next = await withDeadline(iterator.next(), streamDeadlineMs, "Sandbox command event stream");
         if (next.done) break;
         const event = next.value;
+        if (sawExit) {
+          throw new Error("Sandbox command emitted an event after its exit event.");
+        }
+        if (!event || typeof event !== "object") {
+          throw new Error("Sandbox command emitted an invalid event.");
+        }
         if (event.type === "output") {
+          if ((event.stream !== "stdout" && event.stream !== "stderr") ||
+              typeof event.data !== "string") {
+            throw new Error("Sandbox command emitted malformed output.");
+          }
           const bytes = new TextEncoder().encode(event.data).byteLength;
           const remaining = Math.max(0, policy.limits.maxOutputBytes - outputBytes);
           const accepted = Math.min(bytes, remaining);
@@ -126,6 +136,9 @@ export async function runApprovedSandboxPlan(
             throw new Error("Sandbox output exceeded the configured byte limit.");
           }
         } else if (event.type === "exit") {
+          if (!Number.isInteger(event.exit_code)) {
+            throw new Error("Sandbox command emitted an invalid exit code.");
+          }
           sawExit = true;
           exitCodes.push(event.exit_code);
           if (event.exit_code !== 0) {
