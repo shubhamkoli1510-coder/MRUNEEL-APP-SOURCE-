@@ -219,33 +219,41 @@ SELF-IMPROVEMENT FEEDBACK
 
     let geminiError = 'Gemini API key not configured';
     if (ai) {
-      try {
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Gemini response timed out')), 25000)
-        );
-        const response = await Promise.race([
-          ai.models.generateContent({
-            model: 'gemini-3.1-flash-lite',
-            contents: promptToSend,
-            config: { systemInstruction },
-          }),
-          timeoutPromise,
-        ]);
-        const replyText = response.text?.trim();
-        if (replyText) {
-          res.json({
-            text: replyText,
-            language,
-            provider: 'gemini',
-            timestamp: Date.now(),
-          });
-          return;
+      const primaryModel = 'gemini-3.1-flash-lite';
+      const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || 'gemini-2.5-flash';
+      const modelsToTry = [primaryModel, fallbackModel].filter((model, index, all) => all.indexOf(model) === index);
+      for (let index = 0; index < modelsToTry.length; index += 1) {
+        const model = modelsToTry[index];
+        try {
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`Gemini response timed out (${model})`)), 25000)
+          );
+          const response = await Promise.race([
+            ai.models.generateContent({
+              model,
+              contents: promptToSend,
+              config: { systemInstruction },
+            }),
+            timeoutPromise,
+          ]);
+          const replyText = response.text?.trim();
+          if (replyText) {
+            res.json({
+              text: replyText,
+              language,
+              provider: index === 0 ? 'gemini' : 'gemini-fallback',
+              model,
+              timestamp: Date.now(),
+            });
+            return;
+          }
+          geminiError = `${model} returned an empty response`;
+        } catch (error) {
+          geminiError = (error as Error).message || `${model} request failed`;
+          console.warn(`Gemini model ${model} failed:`, geminiError);
         }
-        geminiError = 'Gemini returned an empty response';
-      } catch (error) {
-        geminiError = (error as Error).message || 'Gemini request failed';
-        console.warn('Gemini failed; trying OpenAI:', geminiError);
       }
+      console.warn('All configured Gemini models failed; trying OpenAI:', geminiError);
     }
 
     if (process.env.OPENAI_API_KEY) {
