@@ -25,7 +25,7 @@ import { deviceBridge } from './utils/deviceBridge';
 import { androidDeviceActions } from './utils/androidDeviceActions';
 import { parseOfflineCommand } from './utils/offlineEngine';
 import { ConversationalContext } from './utils/marathiConversationalEngine';
-import { routeRequest } from './core/brainRouter';
+import { runAgentTurn } from './core/agentKernel';
 import { createTaskPlan } from './core/taskPlanner';
 import { executePlanStep } from './core/taskExecutor';
 import { androidDeviceAdapter } from './core/androidDeviceAdapterNative';
@@ -191,7 +191,7 @@ export default function App() {
     if (!queryText.trim()) return;
 
     // Brain Router: classify and gate high-risk external actions before AI processing.
-    const brainRoute = routeRequest(queryText);
+    const agentTurn = runAgentTurn({ text: queryText });\n    const brainRoute = agentTurn.route;
 
     // Add user message to conversation log
     const userMsg: ChatMessage = {
