@@ -5,7 +5,7 @@ export function extractResearchSources(metadata: GroundingMetadataLike | undefin
   for (const chunk of metadata?.groundingChunks ?? []) {
     const url = chunk.web?.uri;
     if (!url || !/^https:\/\//i.test(url)) continue;
-    if (!unique.has(url)) unique.set(url, { title: chunk.web?.title?.trim() || new URL(url).hostname, url });
+    try { const parsed = new URL(url); if (!unique.has(url)) unique.set(url, { title: chunk.web?.title?.trim() || parsed.hostname, url }); } catch { continue; }
   }
   return [...unique.values()].slice(0, 8);
 }
