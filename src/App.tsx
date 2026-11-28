@@ -103,7 +103,7 @@ export default function App() {
       text:
         settings.defaultLanguage === 'mr-IN'
           ? `हा बछा, मी इथंच आहे, बोल! "मृणील" म्हणा किंवा कोरवर टॅप करा.`
-          : `Online. I am MRUNEEL. All Android core subsystems calibrated and standing by. Say "Mruneel" or tap the core.`,
+          : `MRUNEEL ready. Say "Mruneel" or tap the core. Phone actions depend on supported integrations and permissions.`,
       language: settings.defaultLanguage,
       timestamp: Date.now(),
     },
