@@ -10,7 +10,10 @@ const MAX_DIFF_CHARS = 50_000;
 const normalize = (path: string) => path.split(String.fromCharCode(92)).join("/").trim();
 const safePath = (path: string) => {
   const normalized = normalize(path).replace(/^(a|b)\//, "");
-  return !!normalized && !normalized.startsWith("/") && !normalized.split("/").includes("..") &&
+  const segments = normalized.split("/");
+  const hasInvalidSegment = segments.some(segment => !segment || segment === "." || segment === "..");
+  const hasUnsafeCharacters = /[\u0000-\u001f\u007f\s"'<>:|?*]/.test(normalized);
+  return !!normalized && !normalized.startsWith("/") && !hasInvalidSegment && !hasUnsafeCharacters &&
     !/(^|\/)\.env(\.|$)/i.test(normalized) &&
     !/(secret|credential|keystore|\.jks|\.p12)/i.test(normalized) &&
     (normalized.startsWith("src/") || normalized.startsWith("android/app/src/") ||
