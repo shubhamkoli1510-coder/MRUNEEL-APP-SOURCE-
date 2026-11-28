@@ -35,15 +35,15 @@ export function validateCodingProposalDiff(
   const sourcePaths = new Set(sourceFiles.map(f => normalize(f.path)));
   for (const p of proposal.filesToChange ?? []) {
     const normalized = normalize(p);
-    if (!safePath(normalized)) errors.push(\`Unsafe changed-file path: \${p}\`);
-    if (!sourcePaths.has(normalized)) errors.push(\`Changed file was not among fetched sources: \${p}\`);
+    if (!safePath(normalized)) errors.push(\`Unsafe changed-file path: ${p}\`);
+    if (!sourcePaths.has(normalized)) errors.push(\`Changed file was not among fetched sources: ${p}\`);
   }
   const headers = diff.split(/\r?\n/).filter(line => line.startsWith("+++ ") || line.startsWith("--- "));
   const changedPaths = [...new Set(headers.map(headerPath).filter((p): p is string => p !== null))];
   if (headers.length < 2 || changedPaths.length === 0) errors.push("Unified diff file headers are missing.");
   for (const p of changedPaths) {
-    if (!safePath(p)) errors.push(\`Unsafe diff path: \${p}\`);
-    if (!sourcePaths.has(normalize(p))) errors.push(\`Diff path was not among fetched sources: \${p}\`);
+    if (!safePath(p)) errors.push(\`Unsafe diff path: ${p}\`);
+    if (!sourcePaths.has(normalize(p))) errors.push(\`Diff path was not among fetched sources: ${p}\`);
   }
   if (changedPaths.length > 5) errors.push("Diff touches more than 5 files.");
   return { ok: errors.length === 0, errors, changedPaths };
