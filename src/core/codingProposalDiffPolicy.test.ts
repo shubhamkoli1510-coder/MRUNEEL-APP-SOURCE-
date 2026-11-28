@@ -92,3 +92,29 @@ test("accepts standard git diff metadata around valid file headers", () => {
  const gitDiff = validateCodingProposalDiff(proposal("diff --git a/src/core/a.ts b/src/core/a.ts\nindex 1111111..2222222 100644\n--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@ function name\n-old\n+new"), sources);
  assert.equal(gitDiff.ok, true, gitDiff.errors.join("; "));
 });
+
+test("rejects non-canonical dot and empty path segments", () => {
+ for (const unsafePath of ["src/core/./a.ts", "src//core/a.ts"]) {
+  const r = validateCodingProposalDiff(proposal("--- a/" + unsafePath + "\n+++ b/" + unsafePath + "\n@@ -1 +1 @@\n-old\n+new"), sources);
+  assert.ok(r.errors.some(e => e.includes("Unsafe diff path")), unsafePath);
+ }
+});
+
+test("rejects Windows-style traversal after separator normalization", () => {
+ const unsafePath = "src\\core\\..\\..\\a.ts";
+ const r = validateCodingProposalDiff(proposal("--- a/" + unsafePath + "\n+++ b/" + unsafePath + "\n@@ -1 +1 @@\n-old\n+new"), sources);
+ assert.ok(r.errors.some(e => e.includes("Unsafe diff path")));
+});
+
+test("rejects paths containing whitespace or platform-special characters", () => {
+ for (const unsafePath of ["src/core/a file.ts", "src/core/a:stream.ts", "src/core/a|b.ts", "src/core/quoted\\\"name.ts"]) {
+  const r = validateCodingProposalDiff(proposal("--- a/" + unsafePath + "\n+++ b/" + unsafePath + "\n@@ -1 +1 @@\n-old\n+new"), sources);
+  assert.ok(r.errors.some(e => e.includes("Unsafe diff path")), unsafePath);
+ }
+});
+
+test("rejects control characters in diff paths", () => {
+ const unsafePath = "src/core/a\\u0000.ts";
+ const r = validateCodingProposalDiff(proposal("--- a/" + unsafePath + "\n+++ b/" + unsafePath + "\n@@ -1 +1 @@\n-old\n+new"), sources);
+ assert.ok(r.errors.some(e => e.includes("Unsafe diff path")));
+});
