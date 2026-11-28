@@ -402,3 +402,32 @@ test("closes iterator after stalled next() deadline and terminates sandbox", asy
   assert.equal(result.cleanup, "terminated");
   assert.ok(calls.includes("terminate"));
 });
+
+
+test("bounds stalled iterator cleanup after event-stream timeout and terminates sandbox", async () => {
+  const input = {
+    commands: ["npm run test:sandbox-policy"],
+    files: [{ path: "src/core/example.ts", content: "ok" }],
+    timeoutSeconds: 1,
+    networkPolicy: "deny-all" as const,
+  };
+  const review = buildSandboxExecutionPlan(input);
+  const plan = buildSandboxExecutionPlan({ ...input, approvedPlanHash: review.planHash ?? undefined });
+  const reviewedPolicy = buildSandboxLifecyclePolicy(plan);
+  const policy = { ...reviewedPolicy, executionEnabled: true };
+  const { driver, calls } = mockDriver({
+    exec: async () => ({
+      [Symbol.asyncIterator]() {
+        return {
+          next: async () => new Promise<IteratorResult<SandboxExecEvent>>(() => {}),
+          return: async () => new Promise<IteratorResult<SandboxExecEvent>>(() => {}),
+        };
+      },
+    }),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /event stream timed out/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+});
