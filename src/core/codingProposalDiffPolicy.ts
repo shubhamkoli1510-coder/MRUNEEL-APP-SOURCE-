@@ -45,6 +45,7 @@ export function validateCodingProposalDiff(
   let oldRemaining = 0;
   let newRemaining = 0;
   let sawHunk = false;
+  let sawChangedHunkLine = false;
 
   // Parse file headers only outside hunks. Added/removed source lines can
   // legitimately begin with "+++" or "---" and must not be mistaken for headers.
@@ -58,8 +59,10 @@ export function validateCodingProposalDiff(
         newRemaining--;
       } else if (line.startsWith("-")) {
         oldRemaining--;
+        sawChangedHunkLine = true;
       } else if (line.startsWith("+")) {
         newRemaining--;
+        sawChangedHunkLine = true;
       } else {
         errors.push("Malformed unified diff hunk content.");
         continue;
@@ -108,12 +111,7 @@ export function validateCodingProposalDiff(
   }
   if (changedPaths.length !== headerPairs.length) errors.push("Diff contains duplicate or ambiguous file headers.");
   if (!sawHunk) errors.push("Diff contains no hunk.");
-  if (!lines.some(line => (line.startsWith("+") && !line.startsWith("+++")) || (line.startsWith("-") && !line.startsWith("---"))) ||
-      lines.some(line => line.startsWith("+++") && line !== "+++")) {
-    // Changed-line existence is additionally enforced by the parsed hunk counts below.
-    const hasChange = lines.some(line => line.startsWith("+") || line.startsWith("-"));
-    if (!hasChange) errors.push("Diff contains no changed lines.");
-  }
+  if (!sawChangedHunkLine) errors.push("Diff contains no changed lines.");
   if (proposal.filesToChange?.length && proposal.filesToChange.map(normalize).sort().join("|") !== changedPaths.map(normalize).sort().join("|")) errors.push("filesToChange list does not match diff headers.");
   for (const p of changedPaths) {
     if (!safePath(p)) errors.push("Unsafe diff path: " + p);
