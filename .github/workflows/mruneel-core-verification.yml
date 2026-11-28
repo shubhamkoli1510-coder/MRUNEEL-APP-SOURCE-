@@ -12,6 +12,8 @@ on:
       - feature/mruneel-proposal-diff-validator-phase1
       - feature/mruneel-diff-header-integrity-phase1
       - feature/mruneel-diff-orphan-header-guard-phase1
+      - feature/mruneel-sandbox-job-policy-phase1
+      - feature/mruneel-render-sandbox-adapter-phase1
   pull_request:
     branches:
       - feature/mruneel-safe-launchers-phase1
@@ -24,6 +26,8 @@ on:
       - feature/mruneel-coding-loop-ui-integration-phase1
       - feature/mruneel-proposal-diff-validator-phase1
       - feature/mruneel-diff-orphan-header-guard-phase1
+      - feature/mruneel-diff-hunk-boundary-guard-phase1
+      - feature/mruneel-render-sandbox-sdk-phase1
   workflow_dispatch:
 
 jobs:

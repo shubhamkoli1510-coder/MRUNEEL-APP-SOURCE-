@@ -42,3 +42,33 @@ test("rejects orphan +++ headers and malformed header prefixes", () => {
  const malformed = validateCodingProposalDiff(proposal("--- b/src/core/a.ts\n+++ a/src/core/a.ts\n@@ -1 +1 @@\n-old\n+new"), sources);
  assert.ok(malformed.errors.some(e => e.includes("must use --- a/old-path")));
 });
+
+test("does not confuse added or removed source lines with file headers", () => {
+ const added = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -0,0 +1,1 @@\n+++ this is source content"), sources);
+ assert.equal(added.ok, true, added.errors.join("; "));
+ const removed = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1,1 +0,0 @@\n--- this is source content"), sources);
+ assert.equal(removed.ok, true, removed.errors.join("; "));
+});
+
+test("parses a second file header only after the previous hunk is complete", () => {
+ const multi = [
+  "--- a/src/core/a.ts", "+++ b/src/core/a.ts", "@@ -1 +1 @@", "-old", "+new",
+  "--- a/src/core/b.ts", "+++ b/src/core/b.ts", "@@ -1 +1 @@", "-before", "+after"
+ ].join("\n");
+ const twoSources: CodingLabSourceFile[] = [
+  {path:"src/core/a.ts",content:"old"}, {path:"src/core/b.ts",content:"before"}
+ ];
+ const r = validateCodingProposalDiff(proposal(multi, ["src/core/a.ts", "src/core/b.ts"]), twoSources);
+ assert.equal(r.ok, true, r.errors.join("; "));
+ assert.deepEqual(r.changedPaths.sort(), ["src/core/a.ts", "src/core/b.ts"]);
+});
+
+test("rejects hunks whose declared line counts are incomplete", () => {
+ const incomplete = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1,2 +1,2 @@\n-old\n+new"), sources);
+ assert.ok(incomplete.errors.some(e => e.includes("ended before all declared lines")));
+});
+
+test("rejects context-only hunks with no actual edit", () => {
+ const contextOnly = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@\n same"), sources);
+ assert.ok(contextOnly.errors.some(e => e.includes("no changed lines")));
+});
