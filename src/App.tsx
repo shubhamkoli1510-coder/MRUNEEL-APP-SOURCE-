@@ -9,6 +9,7 @@ import {
   Mic,
   Volume2,
   Sparkles,
+  Code2,
 } from 'lucide-react';
 import {
   AssistantSettings,
