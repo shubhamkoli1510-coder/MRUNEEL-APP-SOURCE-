@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createProposalReviewSnapshot, isProposalReviewApproved } from '../core/codingLabApproval';
 import { Code2, X, Loader2, ShieldCheck, Copy, Download, ClipboardCheck } from 'lucide-react';
 
 interface CodingLabProps { isOpen: boolean; onClose: () => void; }
@@ -20,6 +21,8 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [approvedSnapshot, setApprovedSnapshot] = useState<string | null>(null);
+  const reviewApproved = isProposalReviewApproved(approvedSnapshot, task, filePath, source, result);
   if (!isOpen) return null;
 
   const generatePlan = async () => {
@@ -43,12 +46,12 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
   };
 
   const copyPatch = async () => {
-    if (!result?.unifiedDiff) return;
+    if (!result?.unifiedDiff || !reviewApproved) { setNotice('Patch export करण्यापूर्वी proposal approve कर.'); return; }
     try { await navigator.clipboard?.writeText(result.unifiedDiff); setNotice('Patch clipboard मध्ये copy झाला.'); }
     catch { setNotice('Copy करता आलं नाही. Download patch वापर.'); }
   };
   const downloadPatch = () => {
-    if (!result?.unifiedDiff) return;
+    if (!result?.unifiedDiff || !reviewApproved) { setNotice('Patch export करण्यापूर्वी proposal approve कर.'); return; }
     const patch = new Blob([result.unifiedDiff], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(patch);
     const link = document.createElement('a');
@@ -80,9 +83,9 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
             {!!result.filesToChange?.length && <div><p className="text-xs text-amber-200 mb-1">बदल प्रस्तावित files</p><ul className="text-xs list-disc pl-5">{result.filesToChange.map((p:string)=><li key={p}>{p}</li>)}</ul></div>}
             {!!result.risks?.length && <div><p className="text-xs text-amber-200 mb-1">धोके / review points</p><ul className="text-xs list-disc pl-5">{result.risks.map((p:string,i:number)=><li key={i}>{p}</li>)}</ul></div>}
             {!!result.testsToRun?.length && <div><p className="text-xs text-amber-200 mb-1">Tests — सुचवलेले</p><ul className="text-xs list-disc pl-5">{result.testsToRun.map((p:string,i:number)=><li key={i}>{p}</li>)}</ul></div>}
-            {result.unifiedDiff && <div><div className="flex flex-wrap justify-between items-center gap-2"><p className="text-xs text-amber-200">Patch preview</p><div className="flex gap-2"><button onClick={copyPatch} className="text-xs flex items-center gap-1 border border-sky-700 rounded px-2 py-1"><Copy size={13}/> Copy</button><button onClick={downloadPatch} className="text-xs flex items-center gap-1 border border-amber-500/50 rounded px-2 py-1"><Download size={13}/> Download</button></div></div><pre className="whitespace-pre-wrap break-all text-[11px] bg-black/60 rounded-lg p-3 max-h-72 overflow-auto">{result.unifiedDiff}</pre></div>}
+            {result.unifiedDiff && <div><div className="flex flex-wrap justify-between items-center gap-2"><p className="text-xs text-amber-200">Patch preview</p><div className="flex gap-2"><button disabled={!reviewApproved} onClick={copyPatch} className="text-xs flex items-center gap-1 border border-sky-700 rounded px-2 py-1 disabled:opacity-40"><Copy size={13}/> Copy</button><button disabled={!reviewApproved} onClick={downloadPatch} className="text-xs flex items-center gap-1 border border-amber-500/50 rounded px-2 py-1 disabled:opacity-40"><Download size={13}/> Download</button></div></div><pre className="whitespace-pre-wrap break-all text-[11px] bg-black/60 rounded-lg p-3 max-h-72 overflow-auto">{result.unifiedDiff}</pre><div className="rounded-lg border border-amber-500/40 bg-amber-950/20 p-3 mt-2 space-y-2"><p className="text-sm font-semibold text-amber-200">Human review / approval</p><p className="text-xs text-sky-100">Diff, source, task, risk आणि test plan तपासूनच approve कर. यामुळे फक्त patch export unlock होतो; GitHub write/merge/deploy होत नाही.</p><label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={reviewApproved} onChange={e=>setApprovedSnapshot(e.target.checked ? createProposalReviewSnapshot(task,filePath,source,result) : null)} className="mt-1 accent-amber-400"/><span>मी हा exact proposal आणि diff तपासला आहे; patch export ला मंजुरी देतो.</span></label>{reviewApproved && <p className="text-xs text-emerald-300">Approved for export. Task/source/diff बदलल्यास approval आपोआप invalid होईल.</p>}</div></div>}
             <div className="rounded-lg border border-sky-700/40 p-3 text-xs space-y-1"><p className="font-semibold text-sky-200 flex items-center gap-1"><ClipboardCheck size={14}/> Apply करण्यापूर्वी</p><p>1. Diff पूर्ण वाच.</p><p>2. फक्त स्वतःच्या feature branch वर apply कर.</p><p>3. Type-check + production build पूर्ण कर.</p><p>4. Android permissions/security/native files बदलले असतील तर स्वतंत्र manual review.</p><p>5. CI pass झाल्याशिवाय merge किंवा APK release करू नको.</p></div>
-            <p className="text-xs text-emerald-300">Proposal तयार झाला. Repository मध्ये कोणताही बदल केलेला नाही.</p>
+            <p className="text-xs text-emerald-300">Proposal तयार झाला. Approval नंतर patch export करता येईल. Repository मध्ये कोणताही बदल केलेला नाही.</p>
           </div>}
         </div>
       </section>
