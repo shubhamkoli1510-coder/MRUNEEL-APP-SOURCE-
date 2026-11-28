@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createRenderSandboxClient, getRenderSandboxReadiness } from "./renderSandboxAdapter";
+import { createRenderSandboxClient, createRenderSandboxDriver, getRenderSandboxReadiness } from "./renderSandboxAdapter";
+import type { Render } from "@renderinc/sdk";
 
 test("reports missing Render credentials without exposing secret values", () => {
   const readiness = getRenderSandboxReadiness({});
@@ -40,4 +41,41 @@ test("constructs an SDK client without making a network request", () => {
     RENDER_WORKSPACE_ID: "tea-dbotcbhsrm7s73d24jrg",
   });
   assert.ok(client.sandboxes);
+});
+
+
+test("maps lifecycle driver operations to Render SDK v1.9.0 without eager calls", async () => {
+  const calls: unknown[][] = [];
+  const stream = (async function* () {
+    yield { type: "exit", exit_code: 0 } as const;
+  })();
+  const fake = {
+    sandboxes: {
+      create: async (input: unknown) => { calls.push(["create", input]); return { id: "sbx-mock" }; },
+      waitUntilRunning: async (id: string, options: unknown) => { calls.push(["wait", id, options]); return {}; },
+      upload: async (id: string, path: string, data: Uint8Array) => { calls.push(["upload", id, path, data.byteLength]); },
+      exec: async (id: string, command: string) => { calls.push(["exec", id, command]); return stream; },
+      terminate: async (id: string) => { calls.push(["terminate", id]); },
+    },
+  } as unknown as Render;
+  const driver = createRenderSandboxDriver(fake);
+  assert.deepEqual(calls, []);
+
+  assert.deepEqual(await driver.create({
+    timeoutSeconds: 30,
+    networkPolicy: { type: "deny-all" },
+  }), { id: "sbx-mock" });
+  await driver.waitUntilRunning("sbx-mock", { timeoutMs: 5000 });
+  await driver.upload("sbx-mock", "/workspace/a.ts", new Uint8Array([1, 2]));
+  assert.equal(await driver.exec("sbx-mock", "npm run test"), stream);
+  await driver.terminate("sbx-mock");
+
+  assert.deepEqual(calls.map((call) => call[0]), [
+    "create", "wait", "upload", "exec", "terminate",
+  ]);
+  assert.deepEqual(calls[0][1], {
+    timeoutSeconds: 30,
+    networkPolicy: { type: "deny-all" },
+    wait: false,
+  });
 });
