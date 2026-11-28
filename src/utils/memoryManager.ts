@@ -195,6 +195,8 @@ export class MemoryManager {
   public static getMemoriesForPrompt(): string {
     const memories = this.getMemories();
     if (!memories.length) return '';
-    return memories.map(m => `- ${m.key}: ${m.value}`).join('\n');
+    // Best-effort exclusion of obvious credentials and sensitive records before optional cloud sharing.
+    const blocked = /password|passcode|pin|otp|token|api.?key|secret|bank|card number|aadhaar|passport|medical|diagnosis|medicine|health|salary|income|exact location|address|धर्म|जात|आधार|पासवर्ड|पिन|ओटीपी|आरोग्य|औषध|पगार|पत्ता|वैद्यकीय/i;
+    return memories.filter(m => !blocked.test(m.key + ' ' + m.value)).map(m => `- ${m.key}: ${m.value}`).join('\n');
   }
 }
