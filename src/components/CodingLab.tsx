@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createMultiFileProposalReviewSnapshot, isMultiFileProposalReviewApproved, type CodingLabSourceFile } from '../core/codingLabApproval';
 import { initialCodingLoopState, transitionCodingLoop, canCodingLoopExport, type CodingLoopState } from '../core/autonomousCodingLoop';
+import { validateCodingProposalDiff } from '../core/codingProposalDiffPolicy';
 import { Code2, X, Loader2, ShieldCheck, Copy, Download, ClipboardCheck } from 'lucide-react';
 
 interface CodingLabProps { isOpen: boolean; onClose: () => void; }
@@ -52,7 +53,7 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
       for (let attempt = 0; attempt < 3; attempt++) {
         const response = await fetch(`${API_BASE_URL}/api/coding/plan`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(60000), body: JSON.stringify({ task: feedback ? `${task}\\n\\nPrevious proposal validation feedback: ${feedback}\\nReturn a corrected proposal with a non-empty unified diff.` : task, files }),
+          signal: AbortSignal.timeout(60000), body: JSON.stringify({ task: feedback ? `${task}\n\nPrevious proposal validation feedback: ${feedback}\nReturn a corrected proposal with a non-empty unified diff.` : task, files }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Coding Lab request failed');
@@ -60,13 +61,14 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
         if (attempt === 0) setLoopState(prev => transitionCodingLoop(prev, { type: 'plan_ready' }));
         setLoopState(prev => transitionCodingLoop(prev, { type: 'proposal_ready' }));
         const proposal = data.proposal as CodingProposal;
-        // Structural-only validation: non-empty diff required. No tests/commands run here.
-        if (typeof proposal.unifiedDiff === 'string' && proposal.unifiedDiff.trim()) {
+        // Structural policy validation only; no tests or commands run.
+        const validation = validateCodingProposalDiff(proposal, files);
+        if (validation.ok) {
           setLoopState(prev => transitionCodingLoop(prev, { type: 'validation_passed' }));
           accepted = proposal;
           break;
         }
-        feedback = 'Diff is missing or empty. Provide a concrete, reviewable unified diff.';
+        feedback = validation.errors.join(' ');
         setLoopState(prev => transitionCodingLoop(prev, { type: 'validation_failed', reason: feedback }));
         if (attempt < 2) setLoopState(prev => transitionCodingLoop(prev, { type: 'revision_ready' }));
       }
