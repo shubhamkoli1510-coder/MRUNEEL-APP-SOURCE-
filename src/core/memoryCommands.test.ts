@@ -1,0 +1,10 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { handleMemoryCommand, createMemoryCommandStore } from "./memoryCommands";
+import type { MemoryStorageAdapter } from "./memoryStore";
+class Storage implements MemoryStorageAdapter { private m=new Map<string,string>(); getItem(k:string){return this.m.get(k)??null;} setItem(k:string,v:string){this.m.set(k,v);} removeItem(k:string){this.m.delete(k);} }
+test("only explicit remember command saves ordinary memory",()=>{const store=createMemoryCommandStore(new Storage());const r=handleMemoryCommand("remember that I prefer short answers",store,"en-US");assert.equal(r.handled,true);if(r.handled)assert.equal(r.action,"saved");assert.equal(store?.list()[0]?.text,"I prefer short answers");});
+test("blocks sensitive memory hints",()=>{const store=createMemoryCommandStore(new Storage());const r=handleMemoryCommand("remember my password is abc123",store);assert.equal(r.handled,true);if(r.handled)assert.equal(r.action,"blocked");assert.equal(store?.list().length,0);});
+test("recall lists saved ordinary memories",()=>{const store=createMemoryCommandStore(new Storage());store?.save("Use Marathi",{explicitConsent:true});const r=handleMemoryCommand("what do you remember",store,"en-US");assert.equal(r.handled,true);if(r.handled)assert.match(r.response,/Use Marathi/);});
+test("forget all clears local memories",()=>{const store=createMemoryCommandStore(new Storage());store?.save("test",{explicitConsent:true});const r=handleMemoryCommand("forget all memories",store,"en-US");assert.equal(r.handled,true);assert.equal(store?.list().length,0);});
+test("unrecognized text is not handled as a memory command",()=>assert.equal(handleMemoryCommand("hello",createMemoryCommandStore(new Storage())).handled,false));
