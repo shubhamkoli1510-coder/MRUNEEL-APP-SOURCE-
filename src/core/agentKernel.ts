@@ -34,7 +34,7 @@ export function runAgentTurn(input: AgentTurnInput): AgentTurnResult {
   } else if (route.requiresApproval || plan.requiresApproval) {
     mode = "approval_required";
     userMessage = "हे काम करण्यापूर्वी तुझी स्पष्ट परवानगी आवश्यक आहे. आत्ता कोणतीही action execute केलेली नाही.";
-  } else if (route.disposition === "tool_disabled" || route.disposition === "route") {
+  } else if (route.decision.intent === "conversation" && route.disposition === "route") {\n    mode = "answer";\n    userMessage = "सामान्य संवादासाठी तयार. AI उत्तर provider कडे पाठवण्याचा handoff उपलब्ध आहे.";\n  } else if (route.disposition === "tool_disabled" || route.disposition === "route") {
     mode = "adapter_unavailable";
     userMessage = "हे काम ओळखलं आहे, पण त्यासाठी प्रत्यक्ष जोडलेला आणि enabled adapter उपलब्ध नाही. कोणतीही action execute केलेली नाही.";
   } else {
