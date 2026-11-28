@@ -19,6 +19,7 @@ on:
       - feature/mruneel-sandbox-event-protocol-guard-phase1
       - feature/mruneel-sandbox-create-deadline-phase1
       - feature/mruneel-sandbox-total-command-deadline-phase1
+      - feature/mruneel-sandbox-batch-deadline-phase1
       - feature/mruneel-approval-path-integrity-phase1
       - feature/mruneel-sandbox-stream-timeout-phase1
       - feature/mruneel-sandbox-event-protocol-guard-phase1
@@ -40,6 +41,7 @@ on:
       - feature/mruneel-diff-hunk-boundary-guard-phase1
       - feature/mruneel-canonical-diff-path-guard-phase1
       - feature/mruneel-render-sandbox-sdk-phase1
+      - feature/mruneel-sandbox-total-command-deadline-phase1
   workflow_dispatch:
 
 jobs:
