@@ -28,3 +28,10 @@ test("rejects diff without hunk and mismatched file manifest",()=>{
  const mismatch=validateCodingProposalDiff(proposal("--- a/src/core/a.ts\\n+++ b/src/core/a.ts\\n@@ -1 +1 @@\\n-old\\n+new",["src/core/not-fetched.ts"]),sources);
  assert.ok(mismatch.errors.some(e=>e.includes("does not match")));
 });
+
+test("rejects header pairs with path mismatch, missing pair, or rename", () => {
+ const mismatch = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/b.ts\n@@ -1 +1 @@\n-old\n+new", ["src/core/a.ts"]), sources);
+ assert.ok(mismatch.errors.some(e => e.includes("in-place edits")));
+ const unpaired = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n@@ -1 +1 @@\n-old\n+new"), sources);
+ assert.ok(unpaired.errors.some(e => e.includes("ordered")));
+});
