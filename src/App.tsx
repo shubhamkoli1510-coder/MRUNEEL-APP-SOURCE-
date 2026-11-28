@@ -241,6 +241,19 @@ export default function App() {
       return;
     }
 
+    // Coding intents open the proposal-only Coding Lab; no automatic source mutation.
+    if (agentTurn.route.decision.intent === 'coding') {
+      setShowCodingLab(true);
+      const codingNotice = language === 'mr-IN'
+        ? 'Coding Lab उघडलं. बदलाचा प्रस्ताव तयार करण्यासाठी संबंधित file path आणि source code तिथे दे. मी repository आपोआप बदलत नाही.'
+        : 'Coding Lab opened. Provide the exact file path and source there to generate a reviewable proposal. Repository files are not changed automatically.';
+      const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: codingNotice, language, timestamp: Date.now(), actionsTaken: ['Coding Lab opened', 'Proposal-only; no files changed'] };
+      setMessages(prev => [...prev, reply]);
+      setAssistantState('speaking');
+      speechService.speak(codingNotice, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      return;
+    }
+
     // Safe native device intents go through the shared planner + executor + adapter.
     // A direct, explicit user command is consent for these allowlisted low-impact actions only.
     const deviceIntent = parseOfflineCommand(queryText, language, { honorific: settings.honorific });
