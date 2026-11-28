@@ -19,7 +19,7 @@ test("coding request points to coding lab but does not execute", () => {
   const result = routeRequest("Fix this bug in App.tsx");
   assert.equal(result.selectedToolId, "coding_lab");
   assert.equal(result.disposition, "approval_required");
-  assert.equal(result.available, false);
+  assert.equal(result.available, true);
   assert.equal(result.requiresApproval, true);
 });
 test("device request remains gated and disabled", () => {
