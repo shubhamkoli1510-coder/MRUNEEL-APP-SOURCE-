@@ -31,7 +31,8 @@ test("task input bounds and active task protection", () => assert.equal(transiti
  assert.equal(transitionCodingLoop(started,{type:"start",task:"second"}).stage,"blocked");
 });
 
-test("cancel is terminal and approval invalidates after unsafe event", () => const state=run({type:"start",task:"task"},{type:"cancel"});
+test("cancel is terminal", () => {
+ const state=run({type:"start",task:"task"},{type:"cancel"});
  assert.equal(state.stage,"cancelled");
  assert.equal(isCodingLoopTerminal(state.stage),true);
 });
