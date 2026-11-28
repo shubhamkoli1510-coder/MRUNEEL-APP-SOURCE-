@@ -33,3 +33,10 @@ test("empty request returns clarify state", () => {
   const result = runAgentTurn({ text: " " });
   assert.equal(result.mode, "clarify");
 });
+
+test("enabled conversation route returns answer handoff rather than adapter unavailable", () => {
+  const result = runAgentTurn({ text: "hello" });
+  assert.equal(result.mode, "answer");
+  assert.equal(result.executionStarted, false);
+  assert.equal(result.route.selectedToolId, "conversation");
+});
