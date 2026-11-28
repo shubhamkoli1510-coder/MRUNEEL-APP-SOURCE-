@@ -38,11 +38,26 @@ export function validateCodingProposalDiff(
     if (!safePath(normalized)) errors.push("Unsafe changed-file path: " + p);
     if (!sourcePaths.has(normalized)) errors.push("Changed file was not among fetched sources: " + p);
   }
-  const headers = diff.split(/\r?\n/).filter(line => line.startsWith("+++ ") || line.startsWith("--- "));
-  const changedPaths = [...new Set(headers.map(headerPath).filter((p): p is string => p !== null))];
-  if (headers.length < 2 || changedPaths.length === 0) errors.push("Unified diff file headers are missing.");
-  if (!diff.split(/\r?\n/).some(line => line.startsWith("@@"))) errors.push("Diff contains no hunk.");
-  if (!diff.split(/\r?\n/).some(line => (line.startsWith("+") && !line.startsWith("+++")) || (line.startsWith("-") && !line.startsWith("---")))) errors.push("Diff contains no changed lines.");
+  const lines = diff.split(/\r?\n/);
+  const headerPairs: Array<{ oldPath: string | null; newPath: string | null }> = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!lines[i].startsWith("--- ")) continue;
+    const next = lines[i + 1];
+    if (!next?.startsWith("+++ ")) {
+      errors.push("Unified diff headers must use ordered --- / +++ pairs.");
+      continue;
+    }
+    headerPairs.push({ oldPath: headerPath(lines[i]), newPath: headerPath(next) });
+    i++;
+  }
+  if (!headerPairs.length) errors.push("Unified diff file headers are missing.");
+  const changedPaths = [...new Set(headerPairs.flatMap(pair => [pair.oldPath, pair.newPath].filter((p): p is string => p !== null)))];
+  for (const pair of headerPairs) {
+    if (!pair.oldPath || !pair.newPath || pair.oldPath !== pair.newPath) errors.push("Only in-place edits are allowed; file add/delete/rename headers are rejected.");
+  }
+  if (changedPaths.length !== headerPairs.length) errors.push("Diff contains duplicate or ambiguous file headers.");
+  if (!lines.some(line => line.startsWith("@@"))) errors.push("Diff contains no hunk.");
+  if (!lines.some(line => (line.startsWith("+") && !line.startsWith("+++")) || (line.startsWith("-") && !line.startsWith("---")))) errors.push("Diff contains no changed lines.");
   if (proposal.filesToChange?.length && proposal.filesToChange.map(normalize).sort().join("|") !== changedPaths.map(normalize).sort().join("|")) errors.push("filesToChange list does not match diff headers.");
   for (const p of changedPaths) {
     if (!safePath(p)) errors.push("Unsafe diff path: " + p);
