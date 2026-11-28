@@ -18,6 +18,7 @@ on:
       - feature/mruneel-sandbox-stream-timeout-phase1
       - feature/mruneel-sandbox-event-protocol-guard-phase1
       - feature/mruneel-sandbox-create-deadline-phase1
+      - feature/mruneel-sandbox-total-command-deadline-phase1
       - feature/mruneel-approval-path-integrity-phase1
       - feature/mruneel-sandbox-stream-timeout-phase1
       - feature/mruneel-sandbox-event-protocol-guard-phase1
