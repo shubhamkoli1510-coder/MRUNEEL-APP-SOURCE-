@@ -76,12 +76,23 @@ export function validateCodingProposalDiff(
       continue;
     }
 
-    const hunk = line.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
+    const hunk = line.match(/^@@ -(\\d+)(?:,(\\d+))? \\+(\\d+)(?:,(\\d+))? @@(?: .*)?$/);
     if (hunk) {
       sawHunk = true;
       oldRemaining = hunk[2] === undefined ? 1 : Number(hunk[2]);
       newRemaining = hunk[4] === undefined ? 1 : Number(hunk[4]);
+      if (!Number.isSafeInteger(oldRemaining) || !Number.isSafeInteger(newRemaining) ||
+          oldRemaining > MAX_DIFF_CHARS || newRemaining > MAX_DIFF_CHARS) {
+        errors.push("Unified diff hunk line counts are invalid or exceed the diff limit.");
+        oldRemaining = 0;
+        newRemaining = 0;
+        continue;
+      }
       inHunk = oldRemaining > 0 || newRemaining > 0;
+      continue;
+    }
+    if (line.startsWith("@@")) {
+      errors.push("Malformed unified diff hunk header.");
       continue;
     }
 
@@ -100,6 +111,10 @@ export function validateCodingProposalDiff(
     }
     if (line.startsWith("+++ ")) {
       errors.push("Unified diff contains an unpaired +++ header.");
+      continue;
+    }
+    if (line.trim() && !line.startsWith("diff --git ") && !/^index [0-9a-f]+\\.\\.[0-9a-f]+(?: [0-7]{6})?$/i.test(line)) {
+      errors.push("Unified diff contains unexpected content outside a file header or hunk.");
     }
   }
   if (inHunk) errors.push("Unified diff hunk ended before all declared lines were present.");
