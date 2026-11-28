@@ -183,3 +183,97 @@ test("times out stalled command event streams and still terminates", async () =>
   assert.equal(result.cleanup, "terminated");
   assert.ok(calls.includes("terminate"));
 });
+
+
+test("fails closed on duplicate or post-exit sandbox events", async () => {
+  const { plan, policy } = approvedPlan();
+  const cases: SandboxExecEvent[][] = [
+    [{ type: "exit", exit_code: 0 }, { type: "exit", exit_code: 0 }],
+    [{ type: "exit", exit_code: 0 }, { type: "output", stream: "stdout", data: "late" }],
+  ];
+  for (const events of cases) {
+    const { driver, calls } = mockDriver({
+      exec: async () => (async function* () { yield* events; })(),
+    });
+    const result = await runApprovedSandboxPlan({ plan, policy, driver });
+    assert.equal(result.status, "failed");
+    assert.match(result.error ?? "", /event after its exit/i);
+    assert.equal(result.cleanup, "terminated");
+    assert.ok(calls.includes("terminate"));
+  }
+});
+
+test("rejects malformed sandbox output and exit events", async () => {
+  const { plan, policy } = approvedPlan();
+  const cases = [
+    [{ type: "output", stream: "bogus", data: "x" }],
+    [{ type: "output", stream: "stdout", data: 123 }],
+    [{ type: "exit", exit_code: 1.5 }],
+  ];
+  for (const events of cases) {
+    const { driver, calls } = mockDriver({
+      exec: async () => (async function* () { yield* events as any; })(),
+    });
+    const result = await runApprovedSandboxPlan({ plan, policy, driver });
+    assert.equal(result.status, "failed");
+    assert.match(result.error ?? "", /malformed output|invalid exit code/i);
+    assert.equal(result.cleanup, "terminated");
+    assert.ok(calls.includes("terminate"));
+  }
+});
+
+
+test("rejects unknown sandbox event types", async () => {
+  const { plan, policy } = approvedPlan();
+  const { driver, calls } = mockDriver({
+    exec: async () => (async function* () { yield { type: "heartbeat" } as any; })(),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /unknown event type/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+});
+
+
+test("bounds a stalled upload and still terminates sandbox", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = { ...originalPolicy, limits: { ...originalPolicy.limits, startupTimeoutSeconds: 1 } };
+  const { driver, calls } = mockDriver({
+    upload: async () => new Promise<unknown>(() => {}),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /file upload timed out/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+  assert.ok(!calls.includes("exec"));
+});
+
+test("bounds stalled sandbox command setup and still terminates", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = { ...originalPolicy, limits: { ...originalPolicy.limits, startupTimeoutSeconds: 1 } };
+  const { driver, calls } = mockDriver({
+    exec: async () => new Promise<AsyncIterable<SandboxExecEvent>>(() => {}),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /command setup timed out/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+});
+
+
+test("bounds stalled startup readiness and terminates", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = { ...originalPolicy, limits: { ...originalPolicy.limits, startupTimeoutSeconds: 1 } };
+  const { driver, calls } = mockDriver({
+    waitUntilRunning: async () => new Promise<unknown>(() => {}),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /startup timed out/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+  assert.ok(!calls.some((call) => call.startsWith("upload:")));
+});

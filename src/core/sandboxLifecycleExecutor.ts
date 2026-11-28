@@ -91,19 +91,30 @@ export async function runApprovedSandboxPlan(
     }
     sandboxId = sandbox.id;
 
-    await driver.waitUntilRunning(sandboxId, {
-      timeoutMs: policy.limits.startupTimeoutSeconds * 1000,
-    });
+    const startupDeadlineMs = policy.limits.startupTimeoutSeconds * 1000;
+    await withDeadline(
+      driver.waitUntilRunning(sandboxId, { timeoutMs: startupDeadlineMs }),
+      startupDeadlineMs,
+      "Sandbox startup",
+    );
 
     for (const file of plan.files) {
       const remotePath = "/workspace/" + file.path;
-      await driver.upload(sandboxId, remotePath, new TextEncoder().encode(file.content));
+      await withDeadline(
+        driver.upload(sandboxId, remotePath, new TextEncoder().encode(file.content)),
+        policy.limits.startupTimeoutSeconds * 1000,
+        "Sandbox file upload",
+      );
     }
 
     for (const command of plan.request.commands) {
       const boundedCommand = "timeout -k 2 " + plan.request.timeoutSeconds +
         " bash -lc " + shellQuote(command);
-      const events = await driver.exec(sandboxId, boundedCommand);
+      const events = await withDeadline(
+        driver.exec(sandboxId, boundedCommand),
+        policy.limits.startupTimeoutSeconds * 1000,
+        "Sandbox command setup",
+      );
       let sawExit = false;
       const iterator = events[Symbol.asyncIterator]();
       const streamDeadlineMs = (plan.request.timeoutSeconds + 2) * 1000;
@@ -111,7 +122,17 @@ export async function runApprovedSandboxPlan(
         const next = await withDeadline(iterator.next(), streamDeadlineMs, "Sandbox command event stream");
         if (next.done) break;
         const event = next.value;
+        if (sawExit) {
+          throw new Error("Sandbox command emitted an event after its exit event.");
+        }
+        if (!event || typeof event !== "object") {
+          throw new Error("Sandbox command emitted an invalid event.");
+        }
         if (event.type === "output") {
+          if ((event.stream !== "stdout" && event.stream !== "stderr") ||
+              typeof event.data !== "string") {
+            throw new Error("Sandbox command emitted malformed output.");
+          }
           const bytes = new TextEncoder().encode(event.data).byteLength;
           const remaining = Math.max(0, policy.limits.maxOutputBytes - outputBytes);
           const accepted = Math.min(bytes, remaining);
@@ -126,11 +147,16 @@ export async function runApprovedSandboxPlan(
             throw new Error("Sandbox output exceeded the configured byte limit.");
           }
         } else if (event.type === "exit") {
+          if (!Number.isInteger(event.exit_code)) {
+            throw new Error("Sandbox command emitted an invalid exit code.");
+          }
           sawExit = true;
           exitCodes.push(event.exit_code);
           if (event.exit_code !== 0) {
             throw new Error("Sandbox command failed with exit code " + event.exit_code + ".");
           }
+        } else {
+          throw new Error("Sandbox command emitted an unknown event type.");
         }
       }
       if (!sawExit) throw new Error("Sandbox command ended without a verified exit event.");
