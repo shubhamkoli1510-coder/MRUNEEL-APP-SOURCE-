@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { initialCodingLoopState, transitionCodingLoop, canCodingLoopExport, isCodingLoopTerminal, MAX_VALIDATION_ATTEMPTS, MAX_REVISIONS } from "./autonomousCodingLoop";
 
-const run = (...events: Parameters<typeof transitionCodingLoop>[1][]) => events.reduce(transitionCodingLoop, initialCodingLoopState);
+const run = (...events: Parameters<typeof transitionCodingLoop>[1][]) => events.reduce((state, event) => transitionCodingLoop(state, event), initialCodingLoopState);
 
 test("happy path stays review-gated and requires explicit approval before export", () => {
  const state = run({type:"start",task:"Fix tests"}, {type:"plan_ready"}, {type:"proposal_ready"}, {type:"validation_passed"});
