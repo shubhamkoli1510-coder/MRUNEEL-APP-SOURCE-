@@ -6,7 +6,7 @@ test("registry contains unique tool ids", () => {
   const all = listTools({ includeDisabled: true });
   assert.equal(new Set(all.map((tool) => tool.id)).size, all.length);
 });
-test("disabled adapters are not routable", () => {
+test("device bridge remains disabled while research and coding tools are enabled", () => {
   assert.equal(canRouteToTool("device_bridge"), false);
   assert.equal(canRouteToTool("coding_lab"), true);
 });
