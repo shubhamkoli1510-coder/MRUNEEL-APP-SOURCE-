@@ -9,7 +9,7 @@ Goal: combine the JARVIS-inspired domains into one truthful, safety-gated Androi
 - Test coverage for plan routing and approval boundaries.
 
 ## Subsequent implementation sequence
-1. Native alarms and time-specific reminders: Android scheduler + notification permission checks + reboot behavior + cancellation; do not claim schedule until confirmed.
+1. Alarm: user command now opens Android Clock's alarm setup UI; user must confirm there. Notifications for reminders, reboot persistence and cancellation remain.
 2. Allowlisted app launcher: resolve installed apps safely, user-selected allowlist, no arbitrary package launch.
 3. Unified executor: adapters register availability, input schema, risk, permission checks, approval requirements and result verification.
 4. Voice lifecycle: visible microphone state, foreground service policy, user enable/disable, stop/resume handling and battery safeguards.
