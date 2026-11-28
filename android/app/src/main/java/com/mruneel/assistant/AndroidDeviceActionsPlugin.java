@@ -2,6 +2,8 @@ package com.mruneel.assistant;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
+import android.provider.Settings;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
 import android.os.BatteryManager;
@@ -102,6 +104,37 @@ public class AndroidDeviceActionsPlugin extends Plugin {
             else vibrator.vibrate(duration);
             call.resolve();
         } catch (Exception e) { call.reject("Vibration action failed", e); }
+    }
+
+    @PluginMethod
+    public void openScreen(PluginCall call) {
+        String target = call.getString("target");
+        Intent intent;
+        if ("wifi".equals(target)) {
+            intent = new Intent(Build.VERSION.SDK_INT >= 29 ? Settings.Panel.ACTION_WIFI : Settings.ACTION_WIFI);
+        } else if ("bluetooth".equals(target)) {
+            intent = new Intent(Build.VERSION.SDK_INT >= 29 ? Settings.Panel.ACTION_BLUETOOTH : Settings.ACTION_BLUETOOTH);
+        } else if ("settings".equals(target)) {
+            intent = new Intent(Settings.ACTION_SETTINGS);
+        } else if ("camera".equals(target)) {
+            intent = new Intent("android.media.action.IMAGE_CAPTURE");
+        } else if ("dialer".equals(target)) {
+            intent = new Intent(Intent.ACTION_DIAL);
+        } else {
+            call.reject("Unsupported screen target");
+            return;
+        }
+        try {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (intent.resolveActivity(getContext().getPackageManager()) == null) {
+                call.reject("No compatible activity available");
+                return;
+            }
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Could not open requested screen", e);
+        }
     }
 
     @PluginMethod
