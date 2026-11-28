@@ -1,0 +1,46 @@
+name: MRUNEEL Coding Lab PR Safety & Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - master
+      - feature/mruneel-blue-jarvis-new-install
+      - feature/native-wakeword-bridge
+
+permissions:
+  contents: read
+
+jobs:
+  coding-lab-checks:
+    if: startsWith(github.head_ref, 'mruneel-coding/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Validate Coding Lab change scope and secret patterns
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: node scripts/coding-lab-pr-guard.mjs "$BASE_SHA" "$HEAD_SHA" "$HEAD_BRANCH"
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Type-check
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
