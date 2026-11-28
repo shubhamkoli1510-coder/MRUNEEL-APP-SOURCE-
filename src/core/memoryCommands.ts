@@ -24,7 +24,7 @@ export function handleMemoryCommand(text: string, store: MemoryStore | null, lan
     const query = searchMatch[1].trim();
     const records = store?.search(query).filter((record) => record.sensitivity === "ordinary") ?? [];
     return { handled: true, action: "listed", response: records.length
-      ? (isMarathi ? "जुळलेल्या स्थानिक आठवणी:\\n" : "Matching local memories:\\n") + records.map((record) => "• " + record.text).join("\\n")
+      ? (isMarathi ? "जुळलेल्या स्थानिक आठवणी:\\n" : "Matching local memories:\\n") + records.map((record) => "• " + record.text).join("\n")
       : (isMarathi ? "या शब्दांशी जुळणारी स्थानिक आठवण नाही." : "No local memories match that search.") };
   }
   const forgetMatch = input.match(/^(?:forget|delete memory|remove memory|आठवण पुस|ही आठवण विसर)\\s*[:,-]?\\s*(.+)$/i);
