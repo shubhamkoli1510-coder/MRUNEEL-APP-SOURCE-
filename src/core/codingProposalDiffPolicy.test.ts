@@ -72,3 +72,23 @@ test("rejects context-only hunks with no actual edit", () => {
  const contextOnly = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@\n same"), sources);
  assert.ok(contextOnly.errors.some(e => e.includes("no changed lines")));
 });
+
+test("rejects malformed hunk headers instead of accepting a valid prefix", () => {
+ const malformed = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@trailing-junk\n-old\n+new"), sources);
+ assert.ok(malformed.errors.some(e => e.includes("Malformed unified diff hunk header")));
+});
+
+test("rejects hunk counts that exceed the parser limit", () => {
+ const oversized = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1,50001 +1,50001 @@\n-old\n+new"), sources);
+ assert.ok(oversized.errors.some(e => e.includes("line counts are invalid or exceed")));
+});
+
+test("rejects unexpected non-empty content outside file headers and hunks", () => {
+ const stray = validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@\n-old\n+new\nnot-diff-content"), sources);
+ assert.ok(stray.errors.some(e => e.includes("unexpected content outside")));
+});
+
+test("accepts standard git diff metadata around valid file headers", () => {
+ const gitDiff = validateCodingProposalDiff(proposal("diff --git a/src/core/a.ts b/src/core/a.ts\nindex 1111111..2222222 100644\n--- a/src/core/a.ts\n+++ b/src/core/a.ts\n@@ -1 +1 @@ function name\n-old\n+new"), sources);
+ assert.equal(gitDiff.ok, true, gitDiff.errors.join("; "));
+});
