@@ -234,3 +234,31 @@ test("rejects unknown sandbox event types", async () => {
   assert.equal(result.cleanup, "terminated");
   assert.ok(calls.includes("terminate"));
 });
+
+
+test("bounds a stalled upload and still terminates sandbox", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = { ...originalPolicy, limits: { ...originalPolicy.limits, startupTimeoutSeconds: 1 } };
+  const { driver, calls } = mockDriver({
+    upload: async () => new Promise<unknown>(() => {}),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /file upload timed out/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+  assert.ok(!calls.includes("exec"));
+});
+
+test("bounds stalled sandbox command setup and still terminates", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = { ...originalPolicy, limits: { ...originalPolicy.limits, startupTimeoutSeconds: 1 } };
+  const { driver, calls } = mockDriver({
+    exec: async () => new Promise<AsyncIterable<SandboxExecEvent>>(() => {}),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /command setup timed out/i);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+});
