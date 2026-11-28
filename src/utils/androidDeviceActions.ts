@@ -16,6 +16,7 @@ interface AndroidDeviceActionsPlugin {
   getDeviceStatus(): Promise<DeviceStatus>;
   openScreen(options: { target: 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer' }): Promise<void>;
   launchApp(options: { appId: 'whatsapp' | 'youtube' | 'chrome' | 'maps' | 'phone' | 'camera' | 'calculator' | 'settings' }): Promise<{ appId: string; packageName: string }>;
+  requestSystemAlarm(options: { hour: number; minute: number; label?: string }): Promise<{ hour: number; minute: number; awaitingUserConfirmation: boolean }>;
 }
 const NativeActions = registerPlugin<AndroidDeviceActionsPlugin>('AndroidDeviceActions');
 
@@ -28,4 +29,5 @@ export const androidDeviceActions = {
   getStatus: () => NativeActions.getDeviceStatus(),
   openScreen: (target: 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer') => NativeActions.openScreen({ target }),
   launchApp: (appId: 'whatsapp' | 'youtube' | 'chrome' | 'maps' | 'phone' | 'camera' | 'calculator' | 'settings') => NativeActions.launchApp({ appId }),
+  requestSystemAlarm: (hour: number, minute: number, label?: string) => NativeActions.requestSystemAlarm({ hour, minute, label }),
 };
