@@ -30,6 +30,7 @@ import { createTaskPlan } from './core/taskPlanner';
 import { executePlanStep } from './core/taskExecutor';
 import { androidDeviceAdapter } from './core/androidDeviceAdapterNative';
 import { createMemoryCommandStore, handleMemoryCommand } from './core/memoryCommands';
+import { formatResearchResponse, type ResearchSource } from './core/researchGrounding';
 
 // Components
 import { TelemetryBar } from './components/TelemetryBar';
@@ -269,6 +270,45 @@ export default function App() {
       setMessages(prev => [...prev, deviceReply]);
       setAssistantState('speaking');
       speechService.speak(actionText, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      return;
+    }
+
+    // Grounded Research: only send research-intent queries to the Search-enabled server endpoint.
+    if (agentTurn.mode === 'research') {
+      if (!navigator.onLine || settings.offlineFirstMode) {
+        const unavailable = language === 'mr-IN'
+          ? 'सध्या इंटरनेट शोध उपलब्ध नाही. Offline mode मुळे live sources तपासलेले नाहीत.'
+          : 'Live web research is unavailable offline. I have not checked current sources.';
+        const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: unavailable, language, timestamp: Date.now(), isOfflineResponse: true, actionsTaken: ['Research not executed: offline'] };
+        setMessages(prev => [...prev, reply]);
+        setAssistantState('speaking');
+        speechService.speak(unavailable, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/gemini/research`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(45000),
+          body: JSON.stringify({ message: queryText, language }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.details || data.error || 'Research request failed');
+        const sources = Array.isArray(data.sources) ? data.sources as ResearchSource[] : [];
+        const answer = typeof data.text === 'string' ? data.text : 'Research provider returned no answer.';
+        const displayText = formatResearchResponse(answer, sources);
+        const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: displayText, language, timestamp: Date.now(), actionsTaken: [`Grounded research: ${sources.length} sources`] };
+        setMessages(prev => [...prev, reply]);
+        setAssistantState('speaking');
+        speechService.speak(answer, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      } catch (err) {
+        const failed = language === 'mr-IN'
+          ? 'वेब शोध पूर्ण झाला नाही. सर्व्हर किंवा Google Search grounding उपलब्ध आहे का तपास. कोणतेही अप्रमाणित उत्तर दिलेले नाही.'
+          : 'Web research failed. Check the server and Google Search grounding availability. No unverified result was presented.';
+        const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: failed, language, timestamp: Date.now(), isOfflineResponse: true, actionsTaken: ['Research failed', err instanceof Error ? err.message.slice(0, 100) : 'Unknown error'] };
+        setMessages(prev => [...prev, reply]);
+        setAssistantState('speaking');
+        speechService.speak(failed, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+      }
       return;
     }
 
