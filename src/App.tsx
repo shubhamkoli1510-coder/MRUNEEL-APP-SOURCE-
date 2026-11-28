@@ -257,7 +257,7 @@ export default function App() {
     // Safe native device intents go through the shared planner + executor + adapter.
     // A direct, explicit user command is consent for these allowlisted low-impact actions only.
     const deviceIntent = parseOfflineCommand(queryText, language, { honorific: settings.honorific });
-    if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'OPEN_APP' || deviceIntent.type === 'ADJUST_VOLUME') {
+    if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'OPEN_APP' || deviceIntent.type === 'SET_ALARM' || deviceIntent.type === 'ADJUST_VOLUME') {
       const plan = createTaskPlan(queryText);
       const execution = await executePlanStep({ plan, adapter: androidDeviceAdapter, approved: true });
       let actionText = deviceIntent.spokenResponse;
@@ -266,6 +266,8 @@ export default function App() {
         performed.push(execution.summary);
         if (deviceIntent.type === 'OPEN_APP') {
           actionText = language === 'mr-IN' ? 'अॅप उघडलं. Android adapter ने launch ची पुष्टी दिली.' : 'App launched and confirmed by the Android adapter.';
+        } else if (deviceIntent.type === 'SET_ALARM') {
+          actionText = language === 'mr-IN' ? 'फोनचा Clock उघडला. अलार्म सेट करण्यासाठी तिथे वेळ तपासून confirm कर; confirm होईपर्यंत अलार्म सेट झालेला नाही.' : 'The system Clock alarm setup opened. Review and confirm there; the alarm is not scheduled until you confirm it.';
         } else if (deviceIntent.type === 'ADJUST_VOLUME') {
           const data = execution.summary.match(/(\d+\/\d+)/)?.[1];
           actionText = language === 'mr-IN'
