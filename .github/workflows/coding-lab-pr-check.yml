@@ -16,6 +16,8 @@ on:
       - feature/native-wakeword-bridge
       - feature/autonomous-coding-lab
       - feature/coding-lab-review-test-workflow
+      - feature/mruneel-tools-registry-phase1
+      - feature/mruneel-decision-engine-phase1
 
 permissions:
   contents: read
