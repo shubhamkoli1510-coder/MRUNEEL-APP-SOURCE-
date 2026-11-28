@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createMultiFileProposalReviewSnapshot, isMultiFileProposalReviewApproved, type CodingLabSourceFile } from '../core/codingLabApproval';
-import { initialCodingLoopState, transitionCodingLoop, canCodingLoopExport, type CodingLoopState } from '../core/autonomousCodingLoop';
+import { initialCodingLoopState, transitionCodingLoop, canCodingLoopExport, type CodingLoopState } from '../core/autonomousCodingLoop';\nimport { validateCodingProposalDiff } from '../core/codingProposalDiffPolicy';
 import { Code2, X, Loader2, ShieldCheck, Copy, Download, ClipboardCheck } from 'lucide-react';
 
 interface CodingLabProps { isOpen: boolean; onClose: () => void; }
