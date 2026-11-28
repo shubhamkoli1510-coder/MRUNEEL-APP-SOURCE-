@@ -122,8 +122,13 @@ export async function runApprovedSandboxPlan(
       let sawExit = false;
       const iterator = events[Symbol.asyncIterator]();
       const streamDeadlineMs = (plan.request.timeoutSeconds + 2) * 1000;
+      const streamStartedAt = Date.now();
       while (true) {
-        const next = await withDeadline(iterator.next(), streamDeadlineMs, "Sandbox command event stream");
+        const remainingStreamMs = streamDeadlineMs - (Date.now() - streamStartedAt);
+        if (remainingStreamMs <= 0) {
+          throw new Error("Sandbox command event stream timed out.");
+        }
+        const next = await withDeadline(iterator.next(), remainingStreamMs, "Sandbox command event stream");
         if (next.done) break;
         const event = next.value;
         if (sawExit) {
