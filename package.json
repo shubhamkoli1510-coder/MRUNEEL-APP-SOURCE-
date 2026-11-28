@@ -30,7 +30,7 @@
     "test:coding-lab-approval": "tsx --test src/core/codingLabApproval.test.ts && tsx --test src/core/codingLabApproval.multifile.test.ts",
     "test:coding-agent-policy": "tsx --test src/core/codingAgentPolicy.test.ts",
     "test:autonomous-coding-loop": "tsx --test src/core/autonomousCodingLoop.test.ts",
-    "test:coding-proposal-diff": "tsx --test src/core/codingProposalDiffPolicy.test.ts",\n    "test:coding-diff-header-integrity": "tsx --test src/core/codingProposalDiffPolicy.test.ts"
+    "test:coding-proposal-diff": "tsx --test src/core/codingProposalDiffPolicy.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
