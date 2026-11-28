@@ -33,6 +33,6 @@ test("capability inventory accurately marks planned and partial domains", () => 
   const summary = capabilitySummary();
   assert.equal(summary.total, 12);
   assert.ok(summary.partial > 0 && summary.planned > 0);
-  assert.equal(getCapability("research")?.status, "planned");
+  assert.equal(getCapability("research")?.status, "partial");\n  assert.equal(getCapability("automation")?.status, "partial");\n  assert.match(getCapability("research")?.summary ?? "", /Google Search grounding/);
   assert.ok(listCapabilities("partial").every((item) => item.status === "partial"));
 });
