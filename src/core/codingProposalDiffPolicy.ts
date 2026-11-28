@@ -76,7 +76,7 @@ export function validateCodingProposalDiff(
       continue;
     }
 
-    const hunk = line.match(/^@@ -(\\d+)(?:,(\\d+))? \\+(\\d+)(?:,(\\d+))? @@(?: .*)?$/);
+    const hunk = line.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?: .*)?$/);
     if (hunk) {
       sawHunk = true;
       oldRemaining = hunk[2] === undefined ? 1 : Number(hunk[2]);
