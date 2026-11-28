@@ -5,10 +5,12 @@ on:
     branches:
       - feature/mruneel-jarvis-parity-foundation-phase1
       - feature/mruneel-coding-agent-approval-gate-phase1
+      - feature/mruneel-coding-agent-consent-architecture-phase1
   pull_request:
     branches:
       - feature/mruneel-safe-launchers-phase1
       - feature/mruneel-jarvis-parity-foundation-phase1
+      - feature/mruneel-coding-agent-approval-gate-phase1
   workflow_dispatch:
 
 jobs:
