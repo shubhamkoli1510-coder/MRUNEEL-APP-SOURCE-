@@ -323,3 +323,37 @@ test("enforces cumulative command event-stream deadline despite periodic events"
   assert.equal(result.cleanup, "terminated");
   assert.ok(calls.includes("terminate"));
 });
+
+
+test("enforces a cumulative deadline across multiple commands", async () => {
+  const input = {
+    commands: ["first-command", "second-command"],
+    files: [{ path: "src/core/example.ts", content: "ok" }],
+    timeoutSeconds: 1,
+    networkPolicy: "deny-all" as const,
+  };
+  const review = buildSandboxExecutionPlan(input);
+  const plan = buildSandboxExecutionPlan({ ...input, approvedPlanHash: review.planHash ?? undefined });
+  const reviewedPolicy = buildSandboxLifecyclePolicy(plan);
+  const policy = { ...reviewedPolicy, executionEnabled: true };
+  let commandCount = 0;
+  const { driver, calls } = mockDriver({
+    exec: async () => {
+      commandCount++;
+      const current = commandCount;
+      return (async function* () {
+        await new Promise((resolve) => setTimeout(resolve, 2_200));
+        yield { type: "exit", exit_code: 0 } as const;
+        if (current === 2) {
+          await new Promise((resolve) => setTimeout(resolve, 2_200));
+        }
+      })();
+    },
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /command event stream timed out|command batch timed out/i);
+  assert.equal(commandCount, 2);
+  assert.equal(result.cleanup, "terminated");
+  assert.ok(calls.includes("terminate"));
+});
