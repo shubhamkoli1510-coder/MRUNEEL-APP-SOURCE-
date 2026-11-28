@@ -111,9 +111,9 @@ public class AndroidDeviceActionsPlugin extends Plugin {
         String target = call.getString("target");
         Intent intent;
         if ("wifi".equals(target)) {
-            intent = new Intent(Build.VERSION.SDK_INT >= 29 ? Settings.Panel.ACTION_WIFI : Settings.ACTION_WIFI);
+            intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
         } else if ("bluetooth".equals(target)) {
-            intent = new Intent(Build.VERSION.SDK_INT >= 29 ? Settings.Panel.ACTION_BLUETOOTH : Settings.ACTION_BLUETOOTH);
+            intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
         } else if ("settings".equals(target)) {
             intent = new Intent(Settings.ACTION_SETTINGS);
         } else if ("camera".equals(target)) {
