@@ -45,6 +45,7 @@ on:
       - feature/mruneel-diff-hunk-boundary-guard-phase1
       - feature/mruneel-canonical-diff-path-guard-phase1
       - feature/mruneel-render-sandbox-sdk-phase1
+      - feature/mruneel-sandbox-timeout-stalled-cleanup-phase1
   workflow_dispatch:
 
 jobs:
