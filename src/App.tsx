@@ -22,6 +22,7 @@ import { MemoryManager } from './utils/memoryManager';
 import { soundFx } from './utils/audioSynthesizer';
 import { speechService } from './utils/speechService';
 import { deviceBridge } from './utils/deviceBridge';
+import { androidDeviceActions } from './utils/androidDeviceActions';
 import { parseOfflineCommand } from './utils/offlineEngine';
 import { ConversationalContext } from './utils/marathiConversationalEngine';
 import { routeRequest } from './core/brainRouter';
@@ -238,6 +239,7 @@ export default function App() {
 
       // Handle any side effects from offline action
       const actionsTaken: string[] = [];
+      let offlineSpokenResponse = offlineResult.spokenResponse;
       if (offlineResult.actionTaken) {
         actionsTaken.push(offlineResult.actionTaken);
       }
@@ -247,8 +249,22 @@ export default function App() {
 
       if (offlineResult.type === 'TOGGLE_TORCH') {
         const next = offlineResult.payload?.state as boolean;
-        setIsTorchActive(next);
-        deviceBridge.toggleTorch(next);
+        try {
+          if (Capacitor.getPlatform() === 'android') {
+            const result = await androidDeviceActions.setTorch(next);
+            setIsTorchActive(result.enabled);
+            actionsTaken.push(result.enabled ? 'Native torch enabled' : 'Native torch disabled');
+          } else {
+            const result = await deviceBridge.toggleTorch(next);
+            setIsTorchActive(result);
+            actionsTaken.push(result ? 'Torch enabled' : 'Torch disabled');
+          }
+        } catch {
+          offlineSpokenResponse = language === 'mr-IN'
+            ? 'Torch चालू किंवा बंद करता आला नाही. Camera permission किंवा फोनचा flash तपास.'
+            : 'I could not change the torch. Check camera permission or flash hardware.';
+          actionsTaken.push('Torch action failed; state not claimed');
+        }
       } else if (offlineResult.type === 'SET_ALARM') {
         const time = (offlineResult.payload?.time as string) || '07:00';
         const label = (offlineResult.payload?.label as string) || 'MRUNEEL गजर';
@@ -268,7 +284,7 @@ export default function App() {
       const botReply: ChatMessage = {
         id: `bot-${Date.now()}`,
         sender: 'mruneel',
-        text: offlineResult.spokenResponse,
+        text: offlineSpokenResponse,
         language,
         timestamp: Date.now(),
         isOfflineResponse: true,
@@ -279,7 +295,7 @@ export default function App() {
       setAssistantState('speaking');
 
       speechService.speak(
-        offlineResult.spokenResponse,
+        offlineSpokenResponse,
         language,
         settings.voiceSpeed,
         settings.voicePitch,
