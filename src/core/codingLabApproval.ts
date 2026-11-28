@@ -34,7 +34,7 @@ function isCanonicalSourcePath(path: string): boolean {
   const segments = normalized.split("/");
   return !!normalized && !normalized.startsWith("/") &&
     !segments.some((segment) => !segment || segment === "." || segment === "..") &&
-    !/[\\u0000-\\u001f\\u007f\\s"'<>:|?*]/.test(normalized);
+    !/[\u0000-\u001f\u007f\s"'<>:|?*]/.test(normalized);
 }
 
 /** Snapshot for proposals reviewed against multiple exact source files. */
