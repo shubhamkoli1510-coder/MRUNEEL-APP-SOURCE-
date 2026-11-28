@@ -12,7 +12,7 @@
     "lint": "tsc --noEmit",
     "test:decision": "tsx --test src/core/decisionEngine.test.ts",
     "test:device-intents": "tsx --test src/utils/offlineEngine.device-intents.test.ts",
-    "test": "npm run test:decision && npm run test:device-intents && npm run test:registry && npm run test:router && npm run test:memory && npm run test:memory-store && npm run test:memory-commands && npm run test:research-grounding && npm run test:jarvis-parity && npm run test:agent-kernel && npm run test:task-executor && npm run test:android-adapter && npm run test:android-adapter-integration && npm run test:offline-truthfulness && npm run test:security-truthfulness && npm run test:memory-privacy && npm run test:coding-agent-policy && npm run test:coding-lab-approval && npm run test:autonomous-coding-loop && npm run test:coding-proposal-diff && npm run test:sandbox-policy && npm run test:render-sandbox-adapter && npm run test:sandbox-execution-plan",
+    "test": "npm run test:decision && npm run test:device-intents && npm run test:registry && npm run test:router && npm run test:memory && npm run test:memory-store && npm run test:memory-commands && npm run test:research-grounding && npm run test:jarvis-parity && npm run test:agent-kernel && npm run test:task-executor && npm run test:android-adapter && npm run test:android-adapter-integration && npm run test:offline-truthfulness && npm run test:security-truthfulness && npm run test:memory-privacy && npm run test:coding-agent-policy && npm run test:coding-lab-approval && npm run test:autonomous-coding-loop && npm run test:coding-proposal-diff && npm run test:sandbox-policy && npm run test:render-sandbox-adapter && npm run test:sandbox-execution-plan && npm run test:sandbox-lifecycle-policy",
     "test:registry": "tsx --test src/core/toolsRegistry.test.ts",
     "test:router": "tsx --test src/core/brainRouter.test.ts",
     "test:memory": "tsx --test src/core/memoryPolicy.test.ts",
@@ -33,7 +33,8 @@
     "test:coding-proposal-diff": "tsx --test src/core/codingProposalDiffPolicy.test.ts",
     "test:sandbox-policy": "tsx --test src/core/sandboxJobPolicy.test.ts",
     "test:render-sandbox-adapter": "tsx --test src/core/renderSandboxAdapter.test.ts",
-    "test:sandbox-execution-plan": "tsx --test src/core/sandboxExecutionPlan.test.ts"
+    "test:sandbox-execution-plan": "tsx --test src/core/sandboxExecutionPlan.test.ts",
+    "test:sandbox-lifecycle-policy": "tsx --test src/core/sandboxLifecyclePolicy.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
