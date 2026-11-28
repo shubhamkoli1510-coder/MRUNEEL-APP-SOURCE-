@@ -440,7 +440,7 @@ test("reports termination as unconfirmed when terminate call stalls beyond clean
     limits: { ...originalPolicy.limits, cleanupTimeoutSeconds: 1 },
   };
   const { driver, calls } = mockDriver({
-    terminate: async () => new Promise<unknown>(() => {}),
+    terminate: async () => { calls.push("terminate"); return new Promise<unknown>(() => {}); },
   });
   const result = await runApprovedSandboxPlan({ plan, policy, driver });
   assert.equal(result.status, "failed");
