@@ -1,7 +1,7 @@
 import { MemoryStore, type MemoryStorageAdapter } from "./memoryStore";
 
 export type MemoryCommandResult = { handled: false } | { handled: true; response: string; action: "saved" | "listed" | "cleared" | "blocked" | "empty" };
-const SENSITIVE_HINTS = /\\b(password|passcode|pin|otp|token|api key|secret|bank account|card number|medical|diagnosis|medicine|health|salary|income)\\b|पासवर्ड|पिन|ओटीपी|आरोग्य|औषध|बँक|पगार/i;
+const SENSITIVE_HINTS = /\b(password|passcode|pin|otp|token|api key|secret|bank account|card number|medical|diagnosis|medicine|health|salary|income)\b|पासवर्ड|पिन|ओटीपी|आरोग्य|औषध|बँक|पगार/i;
 
 /** Create a browser-backed memory store only when local storage exists; never sync to cloud. */
 export function createMemoryCommandStore(adapter?: MemoryStorageAdapter): MemoryStore | null {
@@ -22,9 +22,9 @@ export function handleMemoryCommand(text: string, store: MemoryStore | null, lan
   }
   if (/^(what do you remember|show memories|माझ्याबद्दल काय आठवतं|काय आठवतं)/i.test(input)) {
     const records = store?.list().filter((record) => record.sensitivity === "ordinary") ?? [];
-    return { handled: true, action: "listed", response: records.length ? (isMarathi ? "माझ्या स्थानिक आठवणी:\\n" : "My local memories:\\n") + records.map((record) => "• " + record.text).join("\\n") : (isMarathi ? "सध्या कोणतीही सेव्ह केलेली सामान्य आठवण नाही." : "No ordinary memories are saved yet.") };
+    return { handled: true, action: "listed", response: records.length ? (isMarathi ? "माझ्या स्थानिक आठवणी:\n" : "My local memories:\n") + records.map((record) => "• " + record.text).join("\n") : (isMarathi ? "सध्या कोणतीही सेव्ह केलेली सामान्य आठवण नाही." : "No ordinary memories are saved yet.") };
   }
-  const match = input.match(/^(?:remember(?:s+that)?|saves+this|लक्षातs+ठेव(?:s+की)?|हेs+लक्षातs+ठेव)s*[:,-]?s*(.+)$/i);
+  const match = input.match(/^(?:remember(?:\s+that)?|save\s+this|लक्षात\s+ठेव(?:\s+की)?|हे\s+लक्षात\s+ठेव)\s*[:,-]?\s*(.+)$/i);
   if (!match) return { handled: false };
   const memoryText = match[1].trim();
   if (!memoryText) return { handled: true, action: "empty", response: isMarathi ? "काय लक्षात ठेवायचं ते सांग." : "Tell me what you want me to remember." };
