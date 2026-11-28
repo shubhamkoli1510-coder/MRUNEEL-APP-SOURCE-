@@ -235,13 +235,12 @@ export default function App() {
           const target = deviceIntent.payload?.target as 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer';
           await androidDeviceActions.openScreen(target);
           performed.push(`Opened Android screen: ${target}`);
-          if (target === 'camera') setShowCamera(true);
         } else {
           const direction = deviceIntent.payload?.direction as -1 | 1;
           const result = direction > 0 ? await androidDeviceActions.volumeUp() : await androidDeviceActions.volumeDown();
           performed.push(`Media volume: ${result.volume}/${result.max}`);
           actionText = language === 'mr-IN'
-            ? `आवाज ${result.volume} पैकी ${result.max} स्तरावर आहे.`
+            ? `आवाज आता ${result.volume}/${result.max} आहे.`
             : `Media volume is now ${result.volume} of ${result.max}.`;
         }
       } catch (error) {
