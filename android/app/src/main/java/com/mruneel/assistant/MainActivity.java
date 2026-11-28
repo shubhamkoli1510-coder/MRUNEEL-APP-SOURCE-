@@ -12,6 +12,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(NativeTTSPlugin.class);
         registerPlugin(NativeWakeWordPlugin.class);
         registerPlugin(AndroidSettingsPlugin.class);
+        registerPlugin(AndroidDeviceActionsPlugin.class);
         super.onCreate(savedInstanceState);
 
         // Keep screen on while assistant active
