@@ -257,14 +257,16 @@ export default function App() {
     // Safe native device intents go through the shared planner + executor + adapter.
     // A direct, explicit user command is consent for these allowlisted low-impact actions only.
     const deviceIntent = parseOfflineCommand(queryText, language, { honorific: settings.honorific });
-    if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'ADJUST_VOLUME') {
+    if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'OPEN_APP' || deviceIntent.type === 'ADJUST_VOLUME') {
       const plan = createTaskPlan(queryText);
       const execution = await executePlanStep({ plan, adapter: androidDeviceAdapter, approved: true });
       let actionText = deviceIntent.spokenResponse;
       const performed: string[] = [];
       if (execution.status === 'completed') {
         performed.push(execution.summary);
-        if (deviceIntent.type === 'ADJUST_VOLUME') {
+        if (deviceIntent.type === 'OPEN_APP') {
+          actionText = language === 'mr-IN' ? 'अॅप उघडलं. Android adapter ने launch ची पुष्टी दिली.' : 'App launched and confirmed by the Android adapter.';
+        } else if (deviceIntent.type === 'ADJUST_VOLUME') {
           const data = execution.summary.match(/(\d+\/\d+)/)?.[1];
           actionText = language === 'mr-IN'
             ? (data ? `आवाज आता ${data} आहे.` : 'आवाज बदलला; native adapter ने कृती पूर्ण झाल्याची पुष्टी दिली.')
