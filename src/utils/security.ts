@@ -40,6 +40,10 @@ export async function verifyPin(enteredPin: string): Promise<boolean> {
   return enteredHash === currentHash;
 }
 
+export function isCustomPinConfigured(): boolean {
+  try { return !!localStorage.getItem(PIN_STORAGE_KEY); } catch { return false; }
+}
+
 export async function saveNewPin(newPin: string): Promise<void> {
   const hash = await hashPin(newPin);
   localStorage.setItem(PIN_STORAGE_KEY, hash);
