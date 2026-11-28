@@ -126,7 +126,10 @@ export function parseOfflineCommand(
     clean.includes('जागे करा') ||
     clean.includes('वेळ लावा')
   ) {
-    const time = extractTimeFromText(clean) || '07:00';
+    const time = extractTimeFromText(clean);
+    if (!time) {
+      return { type: 'SET_ALARM', spokenResponse: lang === 'mr-IN' ? 'अलार्म किती वाजता लावायचा? वेळ सांग.' : lang === 'hi-IN' ? 'अलार्म किस समय लगाना है? समय बताइए।' : 'What time should I set the alarm for?', payload: {}, newContext: { ...context?.conversationalContext, lastTopic: 'alarm' } };
+    }
     if (lang === 'mr-IN') {
       return {
         type: 'SET_ALARM',
