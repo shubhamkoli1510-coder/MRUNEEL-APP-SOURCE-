@@ -251,7 +251,7 @@ export default function App() {
       if (execution.status === 'completed') {
         performed.push(execution.summary);
         if (deviceIntent.type === 'ADJUST_VOLUME') {
-          const data = execution.summary.match(/(\\d+\\/\\d+)/)?.[1];
+          const data = execution.summary.match(/(\d+\/\d+)/)?.[1];
           actionText = language === 'mr-IN'
             ? (data ? `आवाज आता ${data} आहे.` : 'आवाज बदलला; native adapter ने कृती पूर्ण झाल्याची पुष्टी दिली.')
             : (data ? `Media volume is now ${data}.` : 'Volume adjusted and confirmed by the native adapter.');
