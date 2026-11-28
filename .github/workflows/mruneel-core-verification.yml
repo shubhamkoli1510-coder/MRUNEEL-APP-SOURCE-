@@ -7,6 +7,7 @@ on:
       - feature/mruneel-coding-agent-approval-gate-phase1
       - feature/mruneel-coding-agent-consent-architecture-phase1
       - feature/mruneel-coding-lab-review-approval-ui-phase1
+      - feature/mruneel-autonomous-coding-loop-phase1
   pull_request:
     branches:
       - feature/mruneel-safe-launchers-phase1
@@ -14,6 +15,8 @@ on:
       - feature/mruneel-coding-agent-approval-gate-phase1
       - feature/mruneel-coding-agent-consent-architecture-phase1
       - feature/mruneel-coding-lab-review-approval-ui-phase1
+      - feature/mruneel-coding-lab-multifile-review-phase1
+      - feature/mruneel-autonomous-coding-loop-phase1
   workflow_dispatch:
 
 jobs:
