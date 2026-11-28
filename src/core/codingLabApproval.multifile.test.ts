@@ -36,7 +36,7 @@ test("rejects empty, duplicate, oversized or excessive file inputs", () => {
 });
 
 test("rejects non-canonical paths even when a snapshot exists", () => {
- const badPaths = ["src/./a.ts", "src//a.ts", "src/../a.ts", "/src/a.ts", "src/a file.ts", "src/a\\u0000.ts"];
+ const badPaths = ["src/./a.ts", "src//a.ts", "src/../a.ts", "/src/a.ts", "src/a file.ts", "src/a" + String.fromCharCode(0) + ".ts"];
  for (const path of badPaths) {
   const candidate = [{ path, content: "source" }];
   const review = createMultiFileProposalReviewSnapshot("task", candidate, proposal);
