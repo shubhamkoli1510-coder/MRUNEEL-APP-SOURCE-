@@ -183,3 +183,41 @@ test("times out stalled command event streams and still terminates", async () =>
   assert.equal(result.cleanup, "terminated");
   assert.ok(calls.includes("terminate"));
 });
+
+
+test("fails closed on duplicate or post-exit sandbox events", async () => {
+  const { plan, policy } = approvedPlan();
+  const cases: SandboxExecEvent[][] = [
+    [{ type: "exit", exit_code: 0 }, { type: "exit", exit_code: 0 }],
+    [{ type: "exit", exit_code: 0 }, { type: "output", stream: "stdout", data: "late" }],
+  ];
+  for (const events of cases) {
+    const { driver, calls } = mockDriver({
+      exec: async () => (async function* () { yield* events; })(),
+    });
+    const result = await runApprovedSandboxPlan({ plan, policy, driver });
+    assert.equal(result.status, "failed");
+    assert.match(result.error ?? "", /event after its exit/i);
+    assert.equal(result.cleanup, "terminated");
+    assert.ok(calls.includes("terminate"));
+  }
+});
+
+test("rejects malformed sandbox output and exit events", async () => {
+  const { plan, policy } = approvedPlan();
+  const cases = [
+    [{ type: "output", stream: "bogus", data: "x" }],
+    [{ type: "output", stream: "stdout", data: 123 }],
+    [{ type: "exit", exit_code: 1.5 }],
+  ];
+  for (const events of cases) {
+    const { driver, calls } = mockDriver({
+      exec: async () => (async function* () { yield* events as any; })(),
+    });
+    const result = await runApprovedSandboxPlan({ plan, policy, driver });
+    assert.equal(result.status, "failed");
+    assert.match(result.error ?? "", /malformed output|invalid exit code/i);
+    assert.equal(result.cleanup, "terminated");
+    assert.ok(calls.includes("terminate"));
+  }
+});
