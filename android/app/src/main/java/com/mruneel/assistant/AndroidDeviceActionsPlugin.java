@@ -138,6 +138,31 @@ public class AndroidDeviceActionsPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void requestSystemAlarm(PluginCall call) {
+        Integer hour = call.getInt("hour");
+        Integer minute = call.getInt("minute");
+        String label = call.getString("label", "MRUNEEL alarm");
+        if (hour == null || minute == null || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+            call.reject("Alarm time must be valid 24-hour hour/minute values");
+            return;
+        }
+        Intent intent = new Intent(android.provider.AlarmClock.ACTION_SET_ALARM);
+        intent.putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour);
+        intent.putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute);
+        intent.putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, label);
+        intent.putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false);
+        try {
+            if (intent.resolveActivity(getContext().getPackageManager()) == null) {
+                call.reject("No system clock app can configure alarms");
+                return;
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve(new com.getcapacitor.JSObject().put("hour", hour).put("minute", minute).put("awaitingUserConfirmation", true));
+        } catch (Exception e) { call.reject("Could not open system alarm setup", e); }
+    }
+
+    @PluginMethod
     public void launchApp(PluginCall call) {
         String appId = call.getString("appId");
         String packageName = null;
