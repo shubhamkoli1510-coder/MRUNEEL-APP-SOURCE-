@@ -258,6 +258,13 @@ export default function App() {
     // A direct, explicit user command is consent for these allowlisted low-impact actions only.
     const deviceIntent = parseOfflineCommand(queryText, language, { honorific: settings.honorific });
     if (deviceIntent.type === 'OPEN_SCREEN' || deviceIntent.type === 'OPEN_APP' || deviceIntent.type === 'SET_ALARM' || deviceIntent.type === 'ADJUST_VOLUME') {
+      if (deviceIntent.type === 'SET_ALARM' && typeof deviceIntent.payload?.time !== 'string') {
+        const reply: ChatMessage = { id: `bot-${Date.now()}`, sender: 'mruneel', text: deviceIntent.spokenResponse, language, timestamp: Date.now(), actionsTaken: ['No alarm action executed; time needed'] };
+        setMessages(prev => [...prev, reply]);
+        setAssistantState('speaking');
+        speechService.speak(deviceIntent.spokenResponse, language, settings.voiceSpeed, settings.voicePitch, () => setAssistantState('idle'));
+        return;
+      }
       const plan = createTaskPlan(queryText);
       const execution = await executePlanStep({ plan, adapter: androidDeviceAdapter, approved: true });
       let actionText = deviceIntent.spokenResponse;
