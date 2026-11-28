@@ -2,10 +2,13 @@ name: Build Android APK (MRUNEEL)
 
 on:
   push:
-    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install, feature/native-wakeword-bridge, feature/autonomous-coding-lab, feature/mruneel-jarvis-parity-foundation-phase1, feature/mruneel-diff-hunk-boundary-guard-phase1 ]
+    branches: [ main, master, feature/cloud-ai-fallback, feature/mruneel-blue-jarvis-new-install, feature/native-wakeword-bridge, feature/autonomous-coding-lab, feature/mruneel-jarvis-parity-foundation-phase1, feature/mruneel-diff-hunk-boundary-guard-phase1, feature/mruneel-signed-release-apk ]
   pull_request:
     branches: [ feature/native-wakeword-bridge, feature/mruneel-safe-launchers-phase1 ]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build-apk:
@@ -45,6 +48,25 @@ jobs:
         working-directory: android
         run: gradle assembleDebug --stacktrace --info
 
+      - name: Prepare and validate Android release signing key
+        shell: bash
+        env:
+          MRUNEEL_KEYSTORE_BASE64: ${{ secrets.MRUNEEL_KEYSTORE_BASE64 }}
+          MRUNEEL_KEYSTORE_PASSWORD: ${{ secrets.MRUNEEL_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$MRUNEEL_KEYSTORE_BASE64" || { echo "Missing GitHub secret: MRUNEEL_KEYSTORE_BASE64"; exit 1; }
+          test -n "$MRUNEEL_KEYSTORE_PASSWORD" || { echo "Missing GitHub secret: MRUNEEL_KEYSTORE_PASSWORD"; exit 1; }
+          mkdir -p android/app/build
+          printf '%s' "$MRUNEEL_KEYSTORE_BASE64" | base64 --decode > android/app/build/mruneel-upload.p12
+          test -s android/app/build/mruneel-upload.p12
+          keytool -list -keystore android/app/build/mruneel-upload.p12 -storetype PKCS12 -storepass "$MRUNEEL_KEYSTORE_PASSWORD" -alias mruneel-upload >/dev/null
+          echo "Android release signing key validated."
+
+      - name: Build Signed Release APK
+        working-directory: android
+        run: gradle assembleRelease --stacktrace --info
+
       - name: Upload Gradle Diagnostic Log
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,5 +81,13 @@ jobs:
         with:
           name: MRUNEEL-Blue-JARVIS-Debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload MRUNEEL Signed Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MRUNEEL-Blue-JARVIS-Signed-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
