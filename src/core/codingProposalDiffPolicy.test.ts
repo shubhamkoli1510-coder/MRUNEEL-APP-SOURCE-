@@ -21,3 +21,10 @@ test("rejects a diff touching an unfetched file",()=>{
  const r=validateCodingProposalDiff(proposal("--- a/src/core/a.ts\n+++ b/src/core/b.ts\n@@ -1 +1 @@\n-a\n+b"),sources);
  assert.ok(r.errors.some(e=>e.includes("not among fetched")));
 });
+
+test("rejects diff without hunk and mismatched file manifest",()=>{
+ const noHunk=validateCodingProposalDiff(proposal("--- a/src/core/a.ts\\n+++ b/src/core/a.ts\\n-old\\n+new"),sources);
+ assert.ok(noHunk.errors.some(e=>e.includes("no hunk")));
+ const mismatch=validateCodingProposalDiff(proposal("--- a/src/core/a.ts\\n+++ b/src/core/a.ts\\n@@ -1 +1 @@\\n-old\\n+new",["src/core/not-fetched.ts"]),sources);
+ assert.ok(mismatch.errors.some(e=>e.includes("does not match")));
+});
