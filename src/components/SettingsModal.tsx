@@ -255,8 +255,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="font-bold text-amber-300 font-mono">सहाय्यक स्विचेस (System Toggles)</div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="font-semibold text-amber-200">वेक वर्ड "मृणील" सक्रिय ठेवा</span>
-                    <p className="text-[11px] text-amber-500/60">Continuous background wake-word listening</p>
+                    <span className="font-semibold text-amber-200">Foreground wake word "मृणील"</span>
+                    <p className="text-[11px] text-amber-500/60">फक्त app foreground/idle असताना; screen-off background lifecycle अजून पूर्ण नाही</p>
                   </div>
                   <input
                     type="checkbox"
@@ -432,7 +432,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 { title: 'Accessibility settings', detail: 'Accessibility service सेटिंग्ज; MRUNEEL सध्या service enable करत नाही', fn: androidSettings.openAccessibilitySettings },
                 { title: 'Notification settings', detail: 'MRUNEEL notifications परवानगी / channel व्यवस्थापन', fn: androidSettings.openNotificationSettings },
                 { title: 'Battery optimization', detail: 'Background battery restrictions पाहा; exemption स्वतः मंजूर कर', fn: androidSettings.openBatterySettings },
-                { title: 'Default assistant', detail: 'Android digital assistant निवड स्क्रीन', fn: androidSettings.openAssistantSettings },
+                { title: 'Voice input settings', detail: 'Voice input settings; default assistant selection may vary by Android version', fn: androidSettings.openAssistantSettings },
                 { title: 'Exact alarms', detail: 'Exact alarm special access (Android 12+)', fn: androidSettings.openExactAlarmSettings },
               ].map(item => (
                 <button key={item.title} onClick={() => item.fn().catch(err => window.alert(err?.message || 'Settings उघडता आले नाही'))}
