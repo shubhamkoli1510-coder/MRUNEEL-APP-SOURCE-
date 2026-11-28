@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createMultiFileProposalReviewSnapshot, isMultiFileProposalReviewApproved, type CodingLabSourceFile } from '../core/codingLabApproval';
-import { initialCodingLoopState, transitionCodingLoop, canCodingLoopExport, type CodingLoopState } from '../core/autonomousCodingLoop';\nimport { validateCodingProposalDiff } from '../core/codingProposalDiffPolicy';
+import { initialCodingLoopState, transitionCodingLoop, canCodingLoopExport, type CodingLoopState } from '../core/autonomousCodingLoop';
+import { validateCodingProposalDiff } from '../core/codingProposalDiffPolicy';
 import { Code2, X, Loader2, ShieldCheck, Copy, Download, ClipboardCheck } from 'lucide-react';
 
 interface CodingLabProps { isOpen: boolean; onClose: () => void; }
@@ -66,7 +67,7 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
           accepted = proposal;
           break;
         }
-        feedback = 'Diff is missing or empty. Provide a concrete, reviewable unified diff.';
+        feedback = validation.errors.join(' ');
         setLoopState(prev => transitionCodingLoop(prev, { type: 'validation_failed', reason: feedback }));
         if (attempt < 2) setLoopState(prev => transitionCodingLoop(prev, { type: 'revision_ready' }));
       }
