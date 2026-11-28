@@ -194,7 +194,6 @@ export function parseOfflineCommand(
   }
 
   // 3. SAFE DEVICE BRIDGE COMMANDS (screen launches + bounded volume)
-  const openTarget: OfflineAction['payload'] = undefined;
   const openScreenTarget =
     /wifi|wi-fi|वाय.?फाय|वाई.?फाय/.test(clean) ? 'wifi' :
     /bluetooth|ब्लूटूथ/.test(clean) ? 'bluetooth' :
