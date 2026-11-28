@@ -311,6 +311,49 @@ SELF-IMPROVEMENT FEEDBACK
   }
 });
 
+// Read-only public repository source retrieval for Coding Lab.
+const codingRepoReadWindows = new Map<string, number[]>();
+app.post('/api/coding/repo-files', async (req: Request, res: Response) => {
+  const ip = req.ip || 'unknown';
+  const now = Date.now();
+  const recent = (codingRepoReadWindows.get(ip) || []).filter(time => now - time < 60 * 1000);
+  if (recent.length >= 10) { res.status(429).json({ error: 'Repository read limit reached. Wait one minute.' }); return; }
+  recent.push(now); codingRepoReadWindows.set(ip, recent);
+  const requested = req.body?.paths;
+  if (!Array.isArray(requested) || requested.length < 1 || requested.length > 5) {
+    res.status(400).json({ error: 'Request 1–5 file paths.' }); return;
+  }
+  const ref = (process.env.MRUNEEL_CODING_REPO_REF || 'main').trim();
+  const files: Array<{path:string;content:string}> = [];
+  try {
+    for (const raw of requested) {
+      if (typeof raw !== 'string') throw new Error('Invalid file path.');
+      const pathValue = raw.trim().replace(/\\/g, '/');
+      if (!pathValue || pathValue.startsWith('/') || pathValue.split('/').includes('..') ||
+        pathValue.includes('.env') || /secret|credential|keystore|\.jks|\.p12/i.test(pathValue) ||
+        !(pathValue.startsWith('src/') || pathValue.startsWith('android/app/src/') || pathValue === 'package.json' || pathValue === 'server.ts')) {
+        throw new Error('Path is outside the allowed source-file list.');
+      }
+      const response = await fetch(`https://api.github.com/repos/shubhamkoli1510-coder/MRUNEEL-APP-SOURCE-/contents/${pathValue.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(ref)}`, {
+        headers: { Accept: 'application/vnd.github.raw+json', 'User-Agent': 'MRUNEEL-Coding-Lab' },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) {
+        res.status(response.status === 404 ? 404 : 502).json({ error: `Unable to retrieve ${pathValue} from public repo ref ${ref}.` }); return;
+      }
+      const content = await response.text();
+      if (content.length > 20000) { res.status(413).json({ error: `${pathValue} exceeds 20,000 characters.` }); return; }
+      files.push({path:pathValue,content});
+    }
+    const total = files.reduce((sum,file)=>sum+file.content.length,0);
+    if (total > 50000) { res.status(413).json({error:'Total source exceeds 50,000 characters.'}); return; }
+    if (new Set(files.map(file=>file.path)).size !== files.length) { res.status(400).json({error:'Duplicate paths are not allowed.'}); return; }
+    res.json({files,repo:'shubhamkoli1510-coder/MRUNEEL-APP-SOURCE-',ref,readOnly:true});
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : 'Repository read failed.' });
+  }
+});
+
 // Autonomous Coding Lab: generate a reviewable proposal only.
 // This endpoint NEVER writes repository files, runs shell commands, or deploys code.
 const codingRequestWindows = new Map<string, number[]>();
