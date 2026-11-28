@@ -307,10 +307,14 @@ test("enforces cumulative command event-stream deadline despite periodic events"
   const policy = { ...reviewedPolicy, executionEnabled: true };
   const { driver, calls } = mockDriver({
     exec: async () => (async function* () {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 900));
       yield { type: "output", stream: "stdout", data: "tick" } as const;
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 900));
       yield { type: "output", stream: "stdout", data: "tock" } as const;
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      yield { type: "output", stream: "stdout", data: "tick again" } as const;
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      yield { type: "output", stream: "stdout", data: "never on time" } as const;
     })(),
   });
   const result = await runApprovedSandboxPlan({ plan, policy, driver });
