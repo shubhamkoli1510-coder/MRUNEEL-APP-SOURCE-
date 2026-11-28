@@ -277,3 +277,18 @@ test("bounds stalled startup readiness and terminates", async () => {
   assert.ok(calls.includes("terminate"));
   assert.ok(!calls.some((call) => call.startsWith("upload:")));
 });
+
+test("bounds stalled sandbox creation before an ID is available", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = { ...originalPolicy, limits: { ...originalPolicy.limits, startupTimeoutSeconds: 1 } };
+  const { driver, calls } = mockDriver({
+    create: async () => new Promise<{ id: string }>(() => {}),
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.match(result.error ?? "", /sandbox creation timed out/i);
+  assert.equal(result.sandboxId, null);
+  assert.equal(result.cleanup, "not-needed");
+  assert.ok(!calls.includes("waitUntilRunning"));
+  assert.ok(!calls.includes("terminate"));
+});
