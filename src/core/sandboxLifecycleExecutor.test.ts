@@ -431,3 +431,20 @@ test("bounds stalled iterator cleanup after event-stream timeout and terminates 
   assert.equal(result.cleanup, "terminated");
   assert.ok(calls.includes("terminate"));
 });
+
+
+test("reports termination as unconfirmed when terminate call stalls beyond cleanup deadline", async () => {
+  const { plan, policy: originalPolicy } = approvedPlan();
+  const policy = {
+    ...originalPolicy,
+    limits: { ...originalPolicy.limits, cleanupTimeoutSeconds: 1 },
+  };
+  const { driver, calls } = mockDriver({
+    terminate: async () => { calls.push("terminate"); return new Promise<unknown>(() => {}); },
+  });
+  const result = await runApprovedSandboxPlan({ plan, policy, driver });
+  assert.equal(result.status, "failed");
+  assert.equal(result.cleanup, "unconfirmed");
+  assert.match(result.error ?? "", /termination could not be confirmed/i);
+  assert.ok(calls.includes("terminate"));
+});
