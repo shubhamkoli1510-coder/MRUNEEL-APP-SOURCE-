@@ -57,7 +57,7 @@ export const CodingLab: React.FC<CodingLabProps> = ({ isOpen, onClose }) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Coding Lab request failed');
         if (!data.proposal || typeof data.proposal !== 'object') throw new Error('Server ने योग्य proposal दिला नाही.');
-        setLoopState(prev => transitionCodingLoop(prev, { type: 'plan_ready' }));
+        if (attempt === 0) setLoopState(prev => transitionCodingLoop(prev, { type: 'plan_ready' }));
         setLoopState(prev => transitionCodingLoop(prev, { type: 'proposal_ready' }));
         const proposal = data.proposal as CodingProposal;
         // Structural-only validation: non-empty diff required. No tests/commands run here.
