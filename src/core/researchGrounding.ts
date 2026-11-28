@@ -9,7 +9,8 @@ export function extractResearchSources(metadata: GroundingMetadataLike | undefin
   }
   return [...unique.values()].slice(0, 8);
 }
-export function formatResearchResponse(answer: string, sources: ResearchSource[]): string {
+export function formatResearchResponse(answer: string, sources: ResearchSource[], searchQueries: string[] = []): string {
+  const queryBlock = searchQueries.length ? "\n\nSearch queries:\n" + searchQueries.slice(0, 5).map((query) => "• " + query).join("\n") : "";
   const citationBlock = sources.length ? "\n\nSources:\n" + sources.map((source, index) => `[${index + 1}] ${source.title}\n${source.url}`).join("\n") : "";
-  return answer.trim() + citationBlock;
+  return answer.trim() + queryBlock + citationBlock;
 }
