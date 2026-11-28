@@ -113,7 +113,7 @@ export function validateCodingProposalDiff(
       errors.push("Unified diff contains an unpaired +++ header.");
       continue;
     }
-    if (line.trim() && !line.startsWith("diff --git ") && !/^index [0-9a-f]+\\.\\.[0-9a-f]+(?: [0-7]{6})?$/i.test(line)) {
+    if (line.trim() && !line.startsWith("diff --git ") && !/^index [0-9a-f]+\.\.[0-9a-f]+(?: [0-7]{6})?$/i.test(line)) {
       errors.push("Unified diff contains unexpected content outside a file header or hunk.");
     }
   }
