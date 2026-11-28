@@ -425,7 +425,7 @@ export default function App() {
               honorific: settings.honorific || '',
               conversationStyle: language === 'mr-IN' ? 'natural_kolhapuri_marathi' : 'natural_conversational',
             },
-            personalMemories: memories,
+            personalMemories: settings.cloudMemoryConsent ? memories : '',
             telemetry: {
               batteryLevel: telemetry.batteryLevel,
               networkType: telemetry.networkType,
