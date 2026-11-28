@@ -9,11 +9,11 @@ test("routes conversational request to enabled conversation tool", () => {
   assert.equal(result.available, true);
   assert.equal(result.requiresApproval, false);
 });
-test("research intent is blocked because its adapter is disabled", () => {
+test("research intent routes to enabled grounded research adapter", () => {
   const result = routeRequest("Search for latest AI news");
   assert.equal(result.selectedToolId, "research");
-  assert.equal(result.disposition, "tool_disabled");
-  assert.equal(result.available, false);
+  assert.equal(result.disposition, "route");
+  assert.equal(result.available, true);
 });
 test("coding request points to coding lab but does not execute", () => {
   const result = routeRequest("Fix this bug in App.tsx");
