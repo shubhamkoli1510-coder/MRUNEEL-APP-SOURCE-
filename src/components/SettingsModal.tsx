@@ -10,7 +10,6 @@ import {
   Volume2,
   Lock,
   Smartphone,
-  Wrench,
   ExternalLink,
   AlertTriangle,
 } from 'lucide-react';
