@@ -13,6 +13,8 @@ export interface OfflineAction {
     | 'SET_ALARM'
     | 'CHECK_BATTERY'
     | 'TOGGLE_TORCH'
+    | 'ADJUST_VOLUME'
+    | 'OPEN_SCREEN'
     | 'ADD_NOTE'
     | 'SET_REMINDER'
     | 'OPEN_CAMERA'
@@ -189,6 +191,34 @@ export function parseOfflineCommand(
         newContext: { ...context?.conversationalContext, lastTopic: 'battery' }
       };
     }
+  }
+
+  // 3. SAFE DEVICE BRIDGE COMMANDS (screen launches + bounded volume)
+  const openScreenTarget =
+    /wifi|wi-fi|वाय.?फाय|वाई.?फाय/.test(clean) ? 'wifi' :
+    /bluetooth|ब्लूटूथ/.test(clean) ? 'bluetooth' :
+    /open settings|settings उघड|सेटिंग्ज उघड|सेटिंग खोल|android settings/.test(clean) ? 'settings' :
+    /phone camera|native camera|फोन कॅमेरा|कॅमेरा अॅप/.test(clean) ? 'camera' :
+    /dialer|डायलर|फोन लावण्याचा स्क्रीन/.test(clean) ? 'dialer' : null;
+  if (openScreenTarget && /(open|उघड|चालू कर|खोल|दाखव)/.test(clean)) {
+    const targetLabels: Record<string, string> = { wifi: 'Wi-Fi settings', bluetooth: 'Bluetooth settings', settings: 'Android settings', camera: 'फोन कॅमेरा', dialer: 'फोन डायलर' };
+    return {
+      type: 'OPEN_SCREEN',
+      payload: { target: openScreenTarget },
+      spokenResponse: lang === 'mr-IN' ? `${targetLabels[openScreenTarget]} उघडतो. फोनची सेटिंग्ज तुझ्या नियंत्रणात राहतील.` : `Opening ${targetLabels[openScreenTarget]}. Android will keep system settings under your control.`,
+      actionTaken: `${targetLabels[openScreenTarget]} उघडण्याची विनंती`,
+    };
+  }
+  const volumeDirection =
+    /(volume up|increase volume|आवाज वाढव|व्हॉल्यूम वाढव|आवाज मोठा)/.test(clean) ? 1 :
+    /(volume down|decrease volume|आवाज कमी|व्हॉल्यूम कमी|आवाज छोटा)/.test(clean) ? -1 : 0;
+  if (volumeDirection) {
+    return {
+      type: 'ADJUST_VOLUME',
+      payload: { direction: volumeDirection },
+      spokenResponse: lang === 'mr-IN' ? (volumeDirection > 0 ? 'आवाज एक पायरी वाढवतो.' : 'आवाज एक पायरी कमी करतो.') : (volumeDirection > 0 ? 'Increasing media volume one step.' : 'Decreasing media volume one step.'),
+      actionTaken: volumeDirection > 0 ? 'मीडिया आवाज +१' : 'मीडिया आवाज −१',
+    };
   }
 
   // 3. FLASHLIGHT / TORCH

@@ -14,6 +14,7 @@ interface AndroidDeviceActionsPlugin {
   adjustVolume(options: { direction: -1 | 1 }): Promise<{ volume: number; max: number }>;
   vibrate(options: { durationMs?: number }): Promise<void>;
   getDeviceStatus(): Promise<DeviceStatus>;
+  openScreen(options: { target: 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer' }): Promise<void>;
 }
 const NativeActions = registerPlugin<AndroidDeviceActionsPlugin>('AndroidDeviceActions');
 
@@ -24,4 +25,5 @@ export const androidDeviceActions = {
   volumeDown: () => NativeActions.adjustVolume({ direction: -1 }),
   vibrate: (durationMs = 100) => NativeActions.vibrate({ durationMs }),
   getStatus: () => NativeActions.getDeviceStatus(),
+  openScreen: (target: 'wifi' | 'bluetooth' | 'settings' | 'camera' | 'dialer') => NativeActions.openScreen({ target }),
 };
