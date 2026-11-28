@@ -24,6 +24,7 @@ export const DEFAULT_SETTINGS: AssistantSettings = {
   biometricLockEnabled: false,
   pinCode: '1234',
   offlineFirstMode: false,
+  cloudMemoryConsent: false,
 };
 
 const INITIAL_MEMORIES: PersonalMemory[] = [
