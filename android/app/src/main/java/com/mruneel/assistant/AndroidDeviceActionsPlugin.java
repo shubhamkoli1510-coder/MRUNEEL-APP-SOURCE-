@@ -138,6 +138,28 @@ public class AndroidDeviceActionsPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void launchApp(PluginCall call) {
+        String appId = call.getString("appId");
+        String packageName = null;
+        if ("whatsapp".equals(appId)) packageName = "com.whatsapp";
+        else if ("youtube".equals(appId)) packageName = "com.google.android.youtube";
+        else if ("chrome".equals(appId)) packageName = "com.android.chrome";
+        else if ("maps".equals(appId)) packageName = "com.google.android.apps.maps";
+        else if ("phone".equals(appId)) packageName = "com.samsung.android.dialer";
+        else if ("camera".equals(appId)) packageName = "com.sec.android.app.camera";
+        else if ("calculator".equals(appId)) packageName = "com.sec.android.app.popupcalculator";
+        else if ("settings".equals(appId)) packageName = "com.android.settings";
+        else { call.reject("App target is not allowlisted"); return; }
+        try {
+            Intent launch = getContext().getPackageManager().getLaunchIntentForPackage(packageName);
+            if (launch == null) { call.reject("Allowlisted app is not installed or has no launcher activity"); return; }
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(launch);
+            call.resolve(new com.getcapacitor.JSObject().put("appId", appId).put("packageName", packageName));
+        } catch (Exception e) { call.reject("Could not launch allowlisted app", e); }
+    }
+
+    @PluginMethod
     public void getDeviceStatus(PluginCall call) {
         try {
             BatteryManager battery = (BatteryManager) getContext().getSystemService(Context.BATTERY_SERVICE);
