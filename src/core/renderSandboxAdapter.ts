@@ -1,4 +1,5 @@
 import { Render } from "@renderinc/sdk";
+import type { SandboxLifecycleDriver } from "./sandboxLifecycleExecutor";
 
 export interface RenderSandboxEnvironment {
   RENDER_API_KEY?: string;
@@ -44,4 +45,33 @@ export function createRenderSandboxClient(
     token: env.RENDER_API_KEY!.trim(),
     ownerId: env.RENDER_WORKSPACE_ID!.trim() as `tea-${string}`,
   });
+}
+/**
+ * Adapts the pinned Render SDK v1.9.0 to the lifecycle executor contract.
+ * Constructing this adapter makes no API request; calls happen only if a caller
+ * explicitly invokes the returned driver's methods.
+ */
+export function createRenderSandboxDriver(client: Render): SandboxLifecycleDriver {
+  return {
+    async create(input) {
+      const sandbox = await client.sandboxes.create({
+        timeoutSeconds: input.timeoutSeconds,
+        networkPolicy: input.networkPolicy,
+        wait: false,
+      });
+      return { id: sandbox.id };
+    },
+    async waitUntilRunning(id, options) {
+      return client.sandboxes.waitUntilRunning(id, { timeoutMs: options.timeoutMs });
+    },
+    async upload(id, remotePath, data) {
+      await client.sandboxes.upload(id, remotePath, data);
+    },
+    async exec(id, command) {
+      return client.sandboxes.exec(id, command);
+    },
+    async terminate(id) {
+      await client.sandboxes.terminate(id);
+    },
+  };
 }
